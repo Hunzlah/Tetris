@@ -10,6 +10,8 @@ public class CircularGridSpawner : MonoBehaviour
     public float circleRadius = 8f;
     public float minRadius = 2f;
 
+    [SerializeField] private Vector2Int SpawnArea;
+
     public GridCell cellPrefab;
 
     private GridCell[,] gridCells;
@@ -44,11 +46,11 @@ public class CircularGridSpawner : MonoBehaviour
                 {
                     gridCells[x, y].Set_InsideRadius();
                 }
-                else if(dist * cellSize < minRadius)
-                {
-                    gridCells[x, y].Set_SpawnArea();
-                }
-                else
+                //else if(dist * cellSize < minRadius)
+                //{
+                //    gridCells[x, y].Set_SpawnArea();
+                //}
+                else if(dist * cellSize > circleRadius)
                 {
                     gridCells[x, y].Set_OutsideRadius();
                 }
@@ -56,30 +58,43 @@ public class CircularGridSpawner : MonoBehaviour
             }
         }
 
-        List<GridCell> outerCircle = new List<GridCell>();
+        Vector2Int gridCenter = new Vector2Int(gridWidth / 2, gridHeight / 2);
+        Vector2Int spawnAreaStart = new Vector2Int(gridCenter.x - SpawnArea.x, gridCenter.y - SpawnArea.y);
+        Vector2Int spawnAreaEnd = new Vector2Int(gridCenter.x + SpawnArea.x, gridCenter.y + SpawnArea.y);
+
+        for (int x = spawnAreaStart.x; x < spawnAreaEnd.x; x++)
+        {
+            for(int y= spawnAreaStart.y; y < spawnAreaEnd.y; y++)
+            {
+                gridCells[x, y].Set_SpawnArea();
+            }
+        }
+
+
+            List<GridCell> outerCircle = new List<GridCell>();
         // Set outer circle
         for (int x = 0; x < gridWidth; x++)
         {
             for (int y = 0; y < gridHeight; y++)
             {
                 Vector2Int cellPos = new Vector2Int(x, y);
-                if(!AllNeighboursExist(cellPos) && !AnyNeighbourAdjacentToSpawnArea(cellPos))
+                if (!AllNeighboursExist(cellPos) && !AnyNeighbourAdjacentToSpawnArea(cellPos))
                 {
-                    gridCells[x,y].SetCircleIndex(0);
+                    gridCells[x, y].SetCircleIndex(0);
                     gridCells[x, y].SetIsVisited();
 
-                    outerCircle.Add(gridCells[x,y]);
+                    outerCircle.Add(gridCells[x, y]);
                 }
             }
         }
 
         // Propagate to inner circles
 
-        while(outerCircle.Count > 0)
+        while (outerCircle.Count > 0)
         {
             outerCircle = VisitInnerCells(outerCircle);
         }
-        
+
 
     }
 

@@ -411,6 +411,7 @@ MonoBehaviour:
   cellSize: 1
   circleRadius: 10
   minRadius: 3
+  SpawnArea: {x: 3, y: 3}
   cellPrefab: {fileID: -8367387099846894133, guid: f1fa98381430d3840aead3f256192ec0, type: 3}
 --- !u!4 &740725934
 Transform:
