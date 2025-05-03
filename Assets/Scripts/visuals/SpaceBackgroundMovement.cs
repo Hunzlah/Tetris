@@ -17,11 +17,6 @@ public class SpaceBackgroundMovement : MonoBehaviour
     [Header("Parallax Settings")]
     [SerializeField] float[] parallaxDepth = { 1f, 0.6f, 0.3f };
     
-    [Header("Pulse Settings")]
-    [SerializeField] bool enablePulsing = true;
-    [SerializeField] float pulseSpeed = 0.5f;
-    [SerializeField] float pulseIntensity = 0.1f;
-    
     private Rect[] uvRects;
 
     void Start()
