@@ -46,6 +46,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   spriteRenderer: {fileID: 1614725182652087547}
+  circleColors:
+  - {r: 1, g: 0, b: 0, a: 1}
+  - {r: 0.07143843, g: 1, b: 0, a: 1}
+  - {r: 0.97684073, g: 1, b: 0, a: 1}
+  - {r: 1, g: 0.4704976, b: 0, a: 1}
+  - {r: 0, g: 0.80010104, b: 1, a: 1}
+  - {r: 0, g: 0.20507908, b: 1, a: 1}
+  - {r: 1, g: 0, b: 0.6777735, a: 1}
+  - {r: 0.60543776, g: 0, b: 1, a: 1}
+  - {r: 0.81786585, g: 1, b: 0, a: 1}
+  - {r: 0.39942956, g: 1, b: 0, a: 1}
 --- !u!1 &7945162272905370685
 GameObject:
   m_ObjectHideFlags: 0
