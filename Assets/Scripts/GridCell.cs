@@ -1,9 +1,12 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class GridCell : MonoBehaviour
 {
     [SerializeField]
     private SpriteRenderer spriteRenderer;
+
+    [SerializeField] private List<Color> circleColors;
 
     private bool isOccupied;
 
@@ -51,18 +54,7 @@ public class GridCell : MonoBehaviour
     public void SetCircleIndex(int index)
     {
         circleIndex = index;
-
-        switch(circleIndex)
-        {
-            case 0:
-                spriteRenderer.color = Color.red;
-                break;
-            case 1:
-                spriteRenderer.color = Color.green;
-                break;
-            case 2:
-                spriteRenderer.color = Color.blue;
-                break;
-        }
+        spriteRenderer.color = circleColors[circleIndex];
+        
     }
 }

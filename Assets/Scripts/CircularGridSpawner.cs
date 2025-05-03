@@ -22,10 +22,6 @@ public class CircularGridSpawner : MonoBehaviour
         new Vector2Int(0, -1)
     };
 
-    //readonly Vector2Int dirLeft = new Vector2Int(-1, 0);
-    //readonly Vector2Int dirRight = new Vector2Int(1, 0);
-    //readonly Vector2Int dirUp = new Vector2Int(0, 1);
-    //readonly Vector2Int dirDown = new Vector2Int(0, -1);
 
     void Start ()
     {
@@ -67,7 +63,6 @@ public class CircularGridSpawner : MonoBehaviour
             for (int y = 0; y < gridHeight; y++)
             {
                 Vector2Int cellPos = new Vector2Int(x, y);
-                //if (gridCells[x, y].IsSpawnArea) continue;
                 if(!AllNeighboursExist(cellPos) && !AnyNeighbourAdjacentToSpawnArea(cellPos))
                 {
                     gridCells[x,y].SetCircleIndex(0);
@@ -80,8 +75,11 @@ public class CircularGridSpawner : MonoBehaviour
 
         // Propagate to inner circles
 
-
-        VisitInnerCells(outerCircle);
+        while(outerCircle.Count > 0)
+        {
+            outerCircle = VisitInnerCells(outerCircle);
+        }
+        
 
     }
 
