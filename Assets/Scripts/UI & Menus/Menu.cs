@@ -3,9 +3,12 @@ using UnityEngine.SceneManagement;
 public class Menu : MonoBehaviour
 {
 
-    public void PlayGame()
+    public void QuitGame()
     {
-        SceneManager.LoadScene(1);
+    #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+    #endif
+        Application.Quit();
     }
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
