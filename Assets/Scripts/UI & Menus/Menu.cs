@@ -4,13 +4,11 @@ using DG.Tweening;
 public class Menu : MonoBehaviour
 {
     [SerializeField] private RectTransform quitButton, creditsButton;
-    [SerializeField] private float buttonEndPos, buttonMovementSpeed,buttonResetPos;
+    [SerializeField] private float buttonEndPos, buttonMovementSpeed,buttonResetPos,popAnimationEffect;
     
     [SerializeField] private RectTransform creditsBox;
-    [SerializeField] private float popAnimationEffect = 0.5f;
     
-    [SerializeField] private Vector2 hiddenUiBoxVisiblePos;
-    [SerializeField] private Vector2 visibleUiBoxVisiblePos;
+    [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
 
     public void QuitGame()
     {
