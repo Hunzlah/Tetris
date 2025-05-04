@@ -1,7 +1,5 @@
 using UnityEngine;
-using UnityEngine.SceneManagement;
 using DG.Tweening;
-using UnityEngine.Serialization;
 
 public class Menu : MonoBehaviour
 {
@@ -22,7 +20,7 @@ public class Menu : MonoBehaviour
         Application.Quit();
     }
     
-    //Start DOTween animations for each main menu button on startup of game
+    //Start DOTween animations for each main menu button on startup of game and configured base settings for sub menues in main menu
     void Awake()
     {
        
