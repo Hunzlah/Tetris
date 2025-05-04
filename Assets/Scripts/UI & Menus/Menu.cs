@@ -53,9 +53,15 @@ public class Menu : MonoBehaviour
     //returns UI boxes to their hidden position and on completion sets their game object to false while pushing the initial main menu buttons back. 
     public void MainMenu()
     {
-        creditsBox.DOAnchorPos(hiddenUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.InBack).OnComplete(() => creditsBox.gameObject.SetActive(false));
+        creditsBox.DOAnchorPos(hiddenUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.InBack)
+            .OnComplete(() => {
+                creditsBox.gameObject.SetActive(false);
 
-        quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
-        creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+            });
+
+        //quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+       // creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
     }
 }
