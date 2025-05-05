@@ -3,10 +3,10 @@ using DG.Tweening;
 
 public class Menu : MonoBehaviour
 {
-    [SerializeField] private RectTransform quitButton, creditsButton;
+    [SerializeField] private RectTransform quitButton, creditsButton, scoreButton;
     [SerializeField] private float buttonEndPos, buttonMovementSpeed,buttonResetPos,popAnimationEffect;
     
-    [SerializeField] private RectTransform creditsBox;
+    [SerializeField] private RectTransform creditsBox, scoreBox;
     
     [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
 
@@ -28,10 +28,13 @@ public class Menu : MonoBehaviour
         hiddenUiBoxVisiblePos = new Vector2(screenWidth + 200f, visibleUiBoxVisiblePos.y);
         
         creditsBox.anchoredPosition = hiddenUiBoxVisiblePos;
+        scoreBox.anchoredPosition = hiddenUiBoxVisiblePos;
+        scoreBox.gameObject.SetActive(false);
         creditsBox.gameObject.SetActive(false);
         
         quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
         creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+        scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
     }
 
     public void OpenCredits()
@@ -39,6 +42,7 @@ public class Menu : MonoBehaviour
         //animates main menu buttons to the side 
         quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
 
         //sets credits box as visible and animates it with a pop from the right side of the screen
         creditsBox.gameObject.SetActive(true);
@@ -55,9 +59,33 @@ public class Menu : MonoBehaviour
 
                 quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
                 creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
             });
+    }
+    
+    public void OpenScores()
+    {
+        //animates main menu buttons to the side 
+        quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
 
-        //quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
-       // creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+        //sets score box as visible and animates it with a pop from the right side of the screen
+        scoreBox.gameObject.SetActive(true);
+        scoreBox.anchoredPosition = hiddenUiBoxVisiblePos;
+        scoreBox.DOAnchorPos(visibleUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.OutBack);
+    }
+    
+    //returns score UI to their hidden position and on completion sets their game object to false while pushing the initial main menu buttons back. 
+    public void CloseScores()
+    {
+        scoreBox.DOAnchorPos(hiddenUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.InBack)
+            .OnComplete(() => {
+                creditsBox.gameObject.SetActive(false);
+
+                quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+            });
     }
 }
