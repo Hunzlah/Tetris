@@ -32,8 +32,8 @@ public class Menu : MonoBehaviour
         scoreBox.gameObject.SetActive(false);
         creditsBox.gameObject.SetActive(false);
         
-        quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
-        creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+        quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.05f).SetEase(Ease.OutBack);
+        creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.03f).SetEase(Ease.OutBack);
         scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
     }
 
@@ -57,8 +57,8 @@ public class Menu : MonoBehaviour
             .OnComplete(() => {
                 creditsBox.gameObject.SetActive(false);
 
-                quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
-                creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.05f).SetEase(Ease.OutBack);
+                creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.03f).SetEase(Ease.OutBack);
                 scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
             });
     }
@@ -81,10 +81,10 @@ public class Menu : MonoBehaviour
     {
         scoreBox.DOAnchorPos(hiddenUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.InBack)
             .OnComplete(() => {
-                creditsBox.gameObject.SetActive(false);
+                scoreBox.gameObject.SetActive(false);
 
-                quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
-                creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+                quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.05f).SetEase(Ease.OutBack);
+                creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.03f).SetEase(Ease.OutBack);
                 scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
             });
     }
