@@ -1014,8 +1014,8 @@ MonoBehaviour:
   buttonEndPos: -250
   buttonMovementSpeed: 0.5
   buttonResetPos: -1025
-  creditsBox: {fileID: 2118487830}
   popAnimationEffect: 0.5
+  creditsBox: {fileID: 2118487830}
   hiddenUiBoxVisiblePos: {x: 0, y: 0}
   visibleUiBoxVisiblePos: {x: 0, y: 0}
 --- !u!1 &992847433
@@ -2053,7 +2053,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 884393282}
         m_TargetAssemblyTypeName: Menu, Assembly-CSharp
-        m_MethodName: Credits
+        m_MethodName: OpenCredits
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}

@@ -34,7 +34,7 @@ public class Menu : MonoBehaviour
         creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
     }
 
-    public void Credits()
+    public void OpenCredits()
     {
         //animates main menu buttons to the side 
         quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
@@ -47,7 +47,7 @@ public class Menu : MonoBehaviour
     }
 
     //returns UI boxes to their hidden position and on completion sets their game object to false while pushing the initial main menu buttons back. 
-    public void MainMenu()
+    public void CloseCredits()
     {
         creditsBox.DOAnchorPos(hiddenUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.InBack)
             .OnComplete(() => {
