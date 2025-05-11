@@ -1,5 +1,6 @@
 using UnityEngine;
 using DG.Tweening;
+using UnityEngine.SocialPlatforms.Impl;
 
 public class Menu : MonoBehaviour
 {
@@ -9,6 +10,7 @@ public class Menu : MonoBehaviour
     [SerializeField] private RectTransform creditsBox, scoreBox, quitBox;
     
     [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
+    [SerializeField] private ScoreManager scoreManager;
 
     public void QuitGame()
     {
@@ -61,6 +63,8 @@ public class Menu : MonoBehaviour
     public void OpenScores()
     {
         CloseMainMenu();
+        scoreManager.GetHighscore();
+        scoreManager.PrintHighscore();
 
         //sets score box as visible and animates it with a pop from the right side of the screen
         scoreBox.gameObject.SetActive(true);
