@@ -39,6 +39,8 @@ public class GridCell : MonoBehaviour
     {
         placedCell = _cell;
         _cell.transform.SetParent(transform);
+        Color _color = spriteRenderer.color;
+        _cell.SpriteRenderer.color = new Color(_color.r, _color.g, _color.b, 1);
     }
     public void SetNextCellInDirection(Direction _direction, NextInDirectionCellData _nextCell, GridCell _cell)
     {
@@ -74,7 +76,7 @@ public class GridCell : MonoBehaviour
     {
         isSpawnArea = true;
         isInsideRadius = true;
-        spriteRenderer.color = Color.gray;
+        spriteRenderer.color = new Color(Color.gray.r, Color.gray.g, Color.gray.b, 0.25f);
         //spriteRenderer.enabled = false;
     }
     public void SetIsVisited ()

@@ -70,7 +70,7 @@ public class GameController : MonoBehaviour
     {
         
 
-        yield return new WaitForSeconds(0.5f);
+        yield return new WaitForSeconds(0.25f);
 
         if (!CanMoveNext(_shape))
         {
