@@ -24,6 +24,7 @@ public class Menu : MonoBehaviour
     //Start DOTween animations for each main menu button on startup of game and configured base settings for sub menues in main menu
     void Awake()
     {
+        //Must remove before final build!!! VERY IMPORTANT!
         if (isTestingScore == true)
         {
             scoreManager.SetNewHighscore(123);
