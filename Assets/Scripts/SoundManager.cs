@@ -21,7 +21,10 @@ public class SoundManager : MonoBehaviour
 
     public void PlayClickSound()
     {
-        clickSound.loop = false;
-        clickSound.Play();
+        if (clickSound != null)
+        {
+            clickSound.loop = false;
+            clickSound.Play();
+        }
     }
 }
