@@ -72,21 +72,22 @@ public class SoundManager : MonoBehaviour
     // For non-looping songs, you can use this to fade out before the end
     public void FadeOutBeforeEnd()
     {
-        if (backgroundMusic.clip != null && !backgroundMusic.loop)
+        if (backgroundMusic.clip != null && backgroundMusic.loop)
         {
             float timeUntilEnd = backgroundMusic.clip.length - backgroundMusic.time;
             
             if (timeUntilEnd <= fadeOutDuration && !isFading)
             {
                 StartFade(backgroundMusic, fadeOutDuration, 0f);
+                PlayBgMusic();
             }
         }
     }
     
     private void Update()
     {
-        // Check if we need to fade out before the song ends (for non-looping songs)
-        if (backgroundMusic.isPlaying && !backgroundMusic.loop)
+        // Check if we need to fade out before the song ends
+        if (backgroundMusic.isPlaying && backgroundMusic.loop)
         {
             FadeOutBeforeEnd();
         }
@@ -99,32 +100,5 @@ public class SoundManager : MonoBehaviour
             clickSound.loop = false;
             clickSound.Play();
         }
-    }
-    
-    // Optional: Cross-fade between two songs
-    public void CrossFadeToNewSong(AudioClip newClip, float crossFadeDuration = 2f)
-    {
-        StartCoroutine(CrossFade(newClip, crossFadeDuration));
-    }
-    
-    private IEnumerator CrossFade(AudioClip newClip, float duration)
-    {
-        // Create a temporary audio source for the new song
-        AudioSource newSource = gameObject.AddComponent<AudioSource>();
-        newSource.clip = newClip;
-        newSource.volume = 0f;
-        newSource.loop = backgroundMusic.loop;
-        newSource.Play();
-        
-        // Fade out current music and fade in new music simultaneously
-        StartFade(backgroundMusic, duration, 0f);
-        StartFade(newSource, duration, maxVolume);
-        
-        yield return new WaitForSeconds(duration);
-        
-        // Clean up
-        backgroundMusic.Stop();
-        Destroy(backgroundMusic);
-        backgroundMusic = newSource;
     }
 }
