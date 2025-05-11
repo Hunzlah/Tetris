@@ -298,6 +298,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   backgroundMusic: {fileID: 65432619}
+  clickSound: {fileID: 0}
+  fadeInDuration: 2
+  fadeOutDuration: 7
+  maxVolume: 1
 --- !u!82 &65432619
 AudioSource:
   m_ObjectHideFlags: 0
