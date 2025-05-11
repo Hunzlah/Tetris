@@ -7,12 +7,14 @@ public class GridCell : MonoBehaviour
     private SpriteRenderer spriteRenderer;
 
     [SerializeField] private List<Color> circleColors;
+    [SerializeField] private GameObject debugDirectionObj;
 
-    private bool isOccupied;
+    private TetrisCell placedCell;
+    public bool isOccupied => placedCell != null;
 
     private Vector2Int gridPos;
     public Vector2Int GridPos => gridPos;
-    public bool IsOccupied => isOccupied;
+    //public bool IsOccupied => isOccupied;
 
     private bool isInsideRadius;
     public bool IsInsideRaius=> isInsideRadius;
@@ -26,7 +28,35 @@ public class GridCell : MonoBehaviour
     private int circleIndex;
     public int CircleIndex => circleIndex;
 
+    private NextInDirectionCellData nextCell;
+    public NextInDirectionCellData NextCell => nextCell;
 
+    private void Awake ()
+    {
+        //nextCell = new NextInDirectionCellData[4];
+    }
+    public void SetIsOccuped (TetrisCell _cell)
+    {
+        placedCell = _cell;
+        _cell.transform.SetParent(transform);
+    }
+    public void SetNextCellInDirection(Direction _direction, NextInDirectionCellData _nextCell, GridCell _cell)
+    {
+        nextCell = _nextCell;
+
+        //if (gridPos == new Vector2Int(14, 14))
+        //{
+        //    Debug.LogError("Cell Pos: " + transform.position);
+        //    Debug.LogError("Next Pos: " + _cell.transform.position);
+        //}
+        if (_nextCell.exists)
+        {
+            debugDirectionObj.SetActive(true);
+            debugDirectionObj.transform.localPosition = (_cell.transform.localPosition - transform.localPosition) / 2;
+        }
+        else debugDirectionObj.SetActive(false);
+        //directionsView[(int)_direction].SetActive(true);
+    }
     public void SetGridPosition (Vector2Int _gridPos)
     {
         gridPos = _gridPos;
@@ -57,4 +87,13 @@ public class GridCell : MonoBehaviour
         spriteRenderer.color = circleColors[circleIndex];
         
     }
+}
+public enum Direction
+{
+    Left, Right, Down, Up
+}
+public class NextInDirectionCellData
+{
+    public Vector2Int cellPosition;
+    public bool exists;
 }
