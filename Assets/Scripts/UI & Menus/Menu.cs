@@ -11,6 +11,7 @@ public class Menu : MonoBehaviour
     
     [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
     [SerializeField] private ScoreManager scoreManager;
+    [SerializeField] private bool isTestingScore = true;
 
     public void QuitGame()
     {
@@ -23,6 +24,10 @@ public class Menu : MonoBehaviour
     //Start DOTween animations for each main menu button on startup of game and configured base settings for sub menues in main menu
     void Awake()
     {
+        if (isTestingScore == true)
+        {
+            scoreManager.SetNewHighscore(666);
+        }
        
         visibleUiBoxVisiblePos = creditsBox.anchoredPosition;
         
