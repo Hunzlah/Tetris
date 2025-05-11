@@ -26,7 +26,7 @@ public class Menu : MonoBehaviour
     {
         if (isTestingScore == true)
         {
-            scoreManager.SetNewHighscore(666);
+            scoreManager.SetNewHighscore(123);
         }
        
         visibleUiBoxVisiblePos = creditsBox.anchoredPosition;
