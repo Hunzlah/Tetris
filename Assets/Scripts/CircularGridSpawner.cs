@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEditor.Tilemaps;
 using UnityEngine;
 
@@ -10,11 +11,20 @@ public class CircularGridSpawner : MonoBehaviour
     public float circleRadius = 8f;
     public float minRadius = 2f;
 
+    //[SerializeField] private bool rotateCells;
+    //[SerializeField] private float yRotation;
+
     [SerializeField] private Vector2Int SpawnArea;
 
     public GridCell cellPrefab;
 
     private GridCell[,] gridCells;
+
+    private GameObject container;
+    public GameObject Container => container;
+
+    private float[] containerRotations = new float[] { 0, 90, 180, 270 };
+    private int currentContainerRotation;
 
     readonly List<Vector2Int> directions = new List<Vector2Int>()
     {
@@ -24,12 +34,45 @@ public class CircularGridSpawner : MonoBehaviour
         new Vector2Int(0, -1)
     };
 
+    private Direction currentDirection;
+    public Direction CurrentDirection => currentDirection;
 
+    public static CircularGridSpawner Instance { get; private set; }
+
+    private void Awake ()
+    {
+        Instance = this;
+    }
+
+    private void Update ()
+    {
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            currentContainerRotation = (currentContainerRotation + 1) % containerRotations.Length;
+            container.transform.eulerAngles = new Vector3(0, containerRotations[currentContainerRotation], 0);
+            switch (currentContainerRotation) 
+            {
+                case 0:
+                    currentDirection = Direction.Down;
+                    break;
+                case 1:
+                    currentDirection = Direction.Left;
+                    break;
+                case 2:
+                    currentDirection = Direction.Up;
+                    break;
+                case 3:
+                    currentDirection = Direction.Right;
+                    break;
+            }
+            SetNextCells(currentDirection);
+        }
+    }
     void Start ()
     {
         gridCells = new GridCell[gridWidth, gridHeight];
         Vector2 center = new Vector2(gridWidth / 2f, gridHeight / 2f);
-        GameObject container = Instantiate(new GameObject(), transform);
+        container = Instantiate(new GameObject(), transform);
         container.transform.position = new Vector3(gridWidth * cellSize / 2f - cellSize / 2, 0, gridHeight * cellSize / 2f - cellSize / 2);
 
         for (int x = 0; x < gridWidth; x++)
@@ -95,7 +138,105 @@ public class CircularGridSpawner : MonoBehaviour
             outerCircle = VisitInnerCells(outerCircle);
         }
 
+        currentDirection = Direction.Down;
+        SetNextCells(currentDirection);
+    }
 
+    private void SetNextCells (Direction dir)
+    {
+        for (int x = 0; x < gridWidth; x++)
+        {
+            for (int y = 0; y < gridHeight; y++)
+            {
+                GridCell cell = gridCells[x, y];
+                // Down
+                if (IsIndexInsideGrid(cell.GridPos + directions[(int)dir]) && HasNeighbour(cell.GridPos, directions[(int)dir]) &&
+                    GetCell(cell.GridPos + directions[(int)dir]).IsInsideRaius
+                    //&&  cell.CircleIndex > GetCell(cell.GridPos + directions[(int)Direction.Down]).CircleIndex
+                    /*&& !GetCell(cell.GridPos + directions[0]).IsSpawnArea*/)
+                {
+                    NextInDirectionCellData downCell = new NextInDirectionCellData()
+                    {
+                        cellPosition = cell.GridPos + directions[(int)dir],
+                        exists = true
+                    };
+                    cell.SetNextCellInDirection(dir, downCell, GetCell(downCell.cellPosition));
+                }
+                else
+                {
+                    NextInDirectionCellData emptyCell = new NextInDirectionCellData()
+                    {
+                        cellPosition = Vector2Int.zero,
+                        exists = false
+                    };
+                    cell.SetNextCellInDirection(dir, emptyCell, null);
+                }
+
+
+                //// Left
+                //if (IsIndexInsideGrid(cell.GridPos + directions[(int)Direction.Left]) && HasNeighbour(cell.GridPos, directions[(int)Direction.Left]) &&
+                //    GetCell(cell.GridPos + directions[(int)Direction.Left]).IsInsideRaius /*&& !GetCell(cell.GridPos + directions[0]).IsSpawnArea*/)
+                //{
+                //    NextInDirectionCellData leftCell = new NextInDirectionCellData()
+                //    {
+                //        cellPosition = cell.GridPos + directions[(int)Direction.Left],
+                //        exists = true
+                //    };
+                //    cell.SetNextCellInDirection(Direction.Left, leftCell);
+                //}
+                //else
+                //{
+                //    NextInDirectionCellData leftCell = new NextInDirectionCellData()
+                //    {
+                //        cellPosition = Vector2Int.zero,
+                //        exists = false
+                //    };
+                //    cell.SetNextCellInDirection(Direction.Left, leftCell);
+                //}
+
+                //// Right
+                //if (IsIndexInsideGrid(cell.GridPos + directions[(int)Direction.Right]) && HasNeighbour(cell.GridPos, directions[(int)Direction.Right]) &&
+                //    GetCell(cell.GridPos + directions[(int)Direction.Right]).IsInsideRaius /*&& !GetCell(cell.GridPos + directions[0]).IsSpawnArea*/)
+                //{
+                //    NextInDirectionCellData leftCell = new NextInDirectionCellData()
+                //    {
+                //        cellPosition = cell.GridPos + directions[(int)Direction.Right],
+                //        exists = true
+                //    };
+                //    cell.SetNextCellInDirection(Direction.Right, leftCell);
+                //}
+                //else
+                //{
+                //    NextInDirectionCellData leftCell = new NextInDirectionCellData()
+                //    {
+                //        cellPosition = Vector2Int.zero,
+                //        exists = false
+                //    };
+                //    cell.SetNextCellInDirection(Direction.Right, leftCell);
+                //}
+
+                //// Up
+                //if (IsIndexInsideGrid(cell.GridPos + directions[(int)Direction.Right]) && HasNeighbour(cell.GridPos, directions[(int)Direction.Right]) &&
+                //    GetCell(cell.GridPos + directions[(int)Direction.Right]).IsInsideRaius /*&& !GetCell(cell.GridPos + directions[0]).IsSpawnArea*/)
+                //{
+                //    NextInDirectionCellData leftCell = new NextInDirectionCellData()
+                //    {
+                //        cellPosition = cell.GridPos + directions[(int)Direction.Right],
+                //        exists = true
+                //    };
+                //    cell.SetNextCellInDirection(Direction.Right, leftCell);
+                //}
+                //else
+                //{
+                //    NextInDirectionCellData leftCell = new NextInDirectionCellData()
+                //    {
+                //        cellPosition = Vector2Int.zero,
+                //        exists = false
+                //    };
+                //    cell.SetNextCellInDirection(Direction.Right, leftCell);
+                //}
+            }
+        }
     }
 
     private List<GridCell> VisitInnerCells(List<GridCell> cells)
@@ -147,14 +288,6 @@ public class CircularGridSpawner : MonoBehaviour
     {
         gridCells[cellPos.x, cellPos.y].SetIsVisited();
     }
-
-
-
-
-
-
-
-
     private bool AllNeighboursExist(Vector2Int cellPos)
     {
         return HasNeighbour(cellPos, directions[0]) && HasNeighbour(cellPos, directions[1]) && 
@@ -177,7 +310,6 @@ public class CircularGridSpawner : MonoBehaviour
         Vector2Int currentPos = cellPos + direction;
 
         return IsIndexInsideGrid(currentPos) && IsCellInSpawnArea(currentPos);
-            ;
     }
 
     private bool IsIndexInsideGrid(Vector2Int _pos)
@@ -192,8 +324,47 @@ public class CircularGridSpawner : MonoBehaviour
     {
         return gridCells[_pos.x, _pos.y].IsInsideRaius;
     }
-    private GridCell GetCell(Vector2Int _pos)
+    public GridCell GetCell(Vector2Int _pos)
     {
         return gridCells[_pos.x, _pos.y];
+    }
+
+    public bool CanShapeMoveNextInCurrentDirection(TetrisShape _shape)
+    {
+        bool found = true;
+
+
+
+        return found;
+    }
+    public bool HasNextDestinationInCurrentDirection(Vector2Int _pos)
+    {
+        Vector2Int cellPos = _pos + directions[(int)currentDirection];
+        return IsIndexInsideGrid(cellPos) && GetCell(_pos).NextCell.exists && !GetCell(GetCell(_pos).NextCell.cellPosition).isOccupied;
+    }
+    public bool CanMoveInDirection(Vector2Int _pos, Direction direction)
+    {
+        Vector2Int cellPos = _pos + directions[(int)direction];
+        return IsIndexInsideGrid(cellPos) && GetCell(_pos).IsInsideRaius && !GetCell(cellPos).isOccupied;
+    }
+    public bool CanMoveShapeInDirection (TetrisShape _shape, Direction direction)
+    {
+        bool found = true;
+        foreach(var cell in _shape.CellsOnGrid)
+        {
+            Vector2Int cellPos = _shape.CurrentPosOnGrid + cell.CellOffset + directions[(int)direction];
+            if(!IsIndexInsideGrid(cellPos) || !GetCell(cellPos).IsInsideRaius || GetCell(cellPos).isOccupied)
+            {
+                found = false; 
+                break;
+            }
+        }
+        return found;
+        
+    }
+    public bool CanRotateShape(TetrisShape _shape)
+    {
+        // To be implemented
+        return false;
     }
 }
