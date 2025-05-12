@@ -195,7 +195,7 @@ MonoBehaviour:
     tetromino: 6
   boardSize: {x: 0, y: 0}
   spawnPosition: {x: 0, y: 0, z: 0}
-  outerRadiusSquared: 80
+  outerRadiusSquared: 128
   piecePrefab: {fileID: 3409194539171282054, guid: 00580a95eeb8ff8439bbb6ced775bc0a, type: 3}
 --- !u!1 &377161881
 GameObject:
