@@ -32,6 +32,13 @@ public class Board : MonoBehaviour
     private const float pixelsPerUnit = 192f; // PPU of the tiles
     private const float pixelSize = 1f / 192f; // Size of one pixel in Unity units (1/192)
 
+    // Pause state
+    private bool paused = false; // Tracks whether the game is paused
+
+    // Optional: Reference to a pause menu UI (e.g., a Canvas with a "Paused" text)
+    [SerializeField]
+    private GameObject pauseMenuUI; // Assign in the Inspector
+
     public RectInt Bounds
     {
         get
@@ -190,6 +197,12 @@ public class Board : MonoBehaviour
                 Debug.LogError("No valid spawn position found! Check board parameters and tetromino cells.");
             }
         }
+
+        // Ensure pause menu UI is initially disabled
+        if (pauseMenuUI != null)
+        {
+            pauseMenuUI.SetActive(false);
+        }
     }
 
     private void Start()
@@ -199,6 +212,15 @@ public class Board : MonoBehaviour
 
     private void Update()
     {
+        // Handle pause input
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            TogglePause();
+        }
+
+        // Skip updates if the game is paused
+        if (paused) return;
+
         // Handle grid rotation input
         if (!isRotating)
         {
@@ -213,9 +235,31 @@ public class Board : MonoBehaviour
         }
     }
 
+    private void TogglePause()
+    {
+        paused = !paused;
+        if (paused)
+        {
+            Debug.Log("Game Paused");
+            // Show pause menu UI if assigned
+            if (pauseMenuUI != null)
+            {
+                pauseMenuUI.SetActive(true);
+            }
+        }
+        else
+        {
+            Debug.Log("Game Resumed");
+            // Hide pause menu UI
+            if (pauseMenuUI != null)
+            {
+                pauseMenuUI.SetActive(false);
+            }
+        }
+    }
+
     private Vector3 SnapToPixelGrid(Vector3 position)
     {
-        // Snap the position to the nearest pixel grid position based on 192 PPU
         float snappedX = Mathf.Round(position.x / pixelSize) * pixelSize;
         float snappedY = Mathf.Round(position.y / pixelSize) * pixelSize;
         return new Vector3(snappedX, snappedY, position.z);
@@ -223,19 +267,16 @@ public class Board : MonoBehaviour
 
     private IEnumerator RotateGridSmooth(float angleDelta)
     {
-        if (isRotating) yield break; // Prevent overlapping rotations
+        if (isRotating) yield break;
         isRotating = true;
 
-        // Log the position of a reference tile before rotation
         Vector3Int referenceTile = new Vector3Int(0, 0, 0);
         Vector3 worldPosBefore = tilemap.CellToWorld(referenceTile);
         Debug.Log($"Before rotation: Reference tile {referenceTile} world position: {worldPosBefore}");
 
-        // Update target rotation
         float previousRotation = gridRotation;
         targetRotation += angleDelta;
 
-        // Start lerping
         float elapsedTime = 0f;
         Quaternion startRotation = Quaternion.Euler(0f, 0f, gridRotation);
         Quaternion endRotation = Quaternion.Euler(0f, 0f, targetRotation);
@@ -244,18 +285,16 @@ public class Board : MonoBehaviour
         {
             elapsedTime += Time.deltaTime;
             float t = Mathf.Clamp01(elapsedTime / rotationDuration);
-            // Use a smooth step for more natural easing
             float smoothT = t * t * (3f - 2f * t);
             tilemap.transform.rotation = Quaternion.Lerp(startRotation, endRotation, smoothT);
             gridRotation = Mathf.LerpAngle(previousRotation, targetRotation, smoothT);
+            tilemap.transform.position = SnapToPixelGrid(tilemap.transform.position);
             yield return null;
         }
 
-        // Ensure final rotation is exact
         tilemap.transform.rotation = endRotation;
         gridRotation = targetRotation;
 
-        // Snap Tilemap and Piece positions to the pixel grid after rotation
         UpdateTilemapRotation();
         if (activePiece != null)
         {
@@ -264,7 +303,6 @@ public class Board : MonoBehaviour
             activePiece.transform.position = SnapToPixelGrid(activePiece.transform.position);
         }
 
-        // Log the position of the reference tile after rotation
         Vector3 worldPosAfter = tilemap.CellToWorld(referenceTile);
         Debug.Log($"After rotation: Reference tile {referenceTile} world position: {worldPosAfter}, gridRotation: {gridRotation}");
 
@@ -273,14 +311,11 @@ public class Board : MonoBehaviour
 
     private void UpdateTilemapRotation()
     {
-        // Ensure the Tilemap's position is centered and snapped to the pixel grid
         tilemap.transform.position = SnapToPixelGrid(Vector3.zero);
-        // Rotation is handled in RotateGridSmooth coroutine
     }
 
     public Vector3Int TransformToGridCoordinates(Vector3Int worldPosition)
     {
-        // Rotate the position by the inverse of the grid rotation to get grid coordinates
         float angleRad = -gridRotation * Mathf.Deg2Rad;
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
@@ -288,7 +323,6 @@ public class Board : MonoBehaviour
         float x = worldPosition.x * cos + worldPosition.y * sin;
         float y = -worldPosition.x * sin + worldPosition.y * cos;
 
-        // Apply tolerance to handle floating-point errors
         const float tolerance = 0.001f;
         int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
         int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
@@ -299,7 +333,6 @@ public class Board : MonoBehaviour
 
     public Vector3Int TransformToWorldCoordinates(Vector3Int gridPosition)
     {
-        // Rotate the position by the grid rotation to get world coordinates
         float angleRad = gridRotation * Mathf.Deg2Rad;
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
@@ -307,7 +340,6 @@ public class Board : MonoBehaviour
         float x = gridPosition.x * cos + gridPosition.y * sin;
         float y = -gridPosition.x * sin + gridPosition.y * cos;
 
-        // Apply tolerance to handle floating-point errors
         const float tolerance = 0.001f;
         int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
         int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
@@ -318,7 +350,6 @@ public class Board : MonoBehaviour
 
     public Vector2Int TransformDirectionToWorld(Vector2Int gridDirection)
     {
-        // Rotate the direction by the grid rotation to get world direction
         float angleRad = gridRotation * Mathf.Deg2Rad;
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
@@ -326,7 +357,6 @@ public class Board : MonoBehaviour
         float x = gridDirection.x * cos + gridDirection.y * sin;
         float y = -gridDirection.x * sin + gridDirection.y * cos;
 
-        // Apply tolerance to handle floating-point errors
         const float tolerance = 0.001f;
         int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
         int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
@@ -336,7 +366,6 @@ public class Board : MonoBehaviour
 
     public Vector2Int TransformWorldDirectionToGrid(Vector2Int worldDirection)
     {
-        // Rotate the world direction by the inverse of the grid rotation to get grid direction
         float angleRad = -gridRotation * Mathf.Deg2Rad;
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
@@ -344,22 +373,20 @@ public class Board : MonoBehaviour
         float x = worldDirection.x * cos + worldDirection.y * sin;
         float y = -worldDirection.x * sin + worldDirection.y * cos;
 
-        // Apply tolerance to handle floating-point errors
         const float tolerance = 0.001f;
         int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
         int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
 
-        // Adjust directions to match player expectation in world space
-        if (worldDirection == new Vector2Int(0, -1)) // Downward movement
+        if (worldDirection == new Vector2Int(0, -1))
         {
-            roundedX = -roundedX; // Flip the x-component to correct the falling direction
+            roundedX = -roundedX;
         }
-        else if (worldDirection == new Vector2Int(-1, 0) || worldDirection == new Vector2Int(1, 0)) // Left or right movement
+        else if (worldDirection == new Vector2Int(-1, 0) || worldDirection == new Vector2Int(1, 0))
         {
             float rotationMod = Mathf.Abs(gridRotation % 360);
             if (Mathf.Approximately(rotationMod, 90) || Mathf.Approximately(rotationMod, 270))
             {
-                roundedY = -roundedY; // Flip the y-component to correct left/right movement at 90 and -90 degrees
+                roundedY = -roundedY;
             }
         }
 
@@ -372,7 +399,6 @@ public class Board : MonoBehaviour
         RectInt bounds = Bounds;
         Vector2Int center = new Vector2Int(0, 0);
 
-        // Center the grid by adjusting the bounds
         int offsetX = (bounds.xMin + bounds.xMax) / 2;
         int offsetY = (bounds.yMin + bounds.yMax) / 2;
         Debug.Log($"Bounds: minX={bounds.xMin}, maxX={bounds.xMax}, minY={bounds.yMin}, maxY={bounds.yMax}, offsetX={offsetX}, offsetY={offsetY}");
@@ -381,7 +407,6 @@ public class Board : MonoBehaviour
         {
             for (int x = bounds.xMin; x < bounds.xMax; x++)
             {
-                // Adjust position to center the grid around (0, 0)
                 Vector2Int adjustedPosition = new Vector2Int(x - offsetX, y - offsetY);
                 int distanceSquared = (adjustedPosition.x * adjustedPosition.x) + (adjustedPosition.y * adjustedPosition.y);
                 bool withinOuterCircle = distanceSquared <= outerRadiusSquared;
@@ -393,12 +418,10 @@ public class Board : MonoBehaviour
             }
         }
 
-        // Log the position of a reference tile after creation
         Vector3Int referenceTile = new Vector3Int(0, 0, 0);
         Vector3 worldPos = tilemap.CellToWorld(referenceTile);
         Debug.Log($"After CreateShapedBoard: Reference tile {referenceTile} world position: {worldPos}");
 
-        // Adjust Tilemap position to ensure the center tile is at (0, 0, 0) in world space
         Vector3 centerWorldPos = tilemap.CellToWorld(new Vector3Int(0, 0, 0));
         Vector3 offset = Vector3.zero - centerWorldPos;
         tilemap.transform.localPosition = Vector3.zero;
@@ -409,7 +432,6 @@ public class Board : MonoBehaviour
     {
         int outerRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
 
-        // Prioritize the center (0, 0, 0)
         Vector3Int centerPos = new Vector3Int(0, 0, 0);
         bool validForAll = true;
         foreach (var tetromino in tetrominoes)
@@ -426,7 +448,6 @@ public class Board : MonoBehaviour
             return centerPos;
         }
 
-        // Fallback: Search outward from center
         for (int r = 0; r <= outerRadius; r++)
         {
             for (int x = -r; x <= r; x++)
@@ -469,10 +490,28 @@ public class Board : MonoBehaviour
 
         activePiece.Initialize(this, spawnPosition, data);
 
-        // Try alternative spawn positions if blocked
         Vector3Int currentSpawn = spawnPosition;
         if (!IsValidPosition(activePiece, currentSpawn))
         {
+            List<string> invalidPositions = new List<string>();
+            foreach (var cell in activePiece.cells)
+            {
+                Vector3Int tilePosition = cell + currentSpawn;
+                if (!IsValidBoardPosition(tilePosition))
+                {
+                    invalidPositions.Add($"Position {tilePosition} is outside circular bounds (distance squared: {(tilePosition.x * tilePosition.x + tilePosition.y * tilePosition.y)} > {outerRadiusSquared})");
+                }
+                else if (tilemap.HasTile(tilePosition) && tilemap.GetTile(tilePosition) != boardTile)
+                {
+                    invalidPositions.Add($"Position {tilePosition} is occupied by another piece");
+                }
+            }
+            if (invalidPositions.Count > 0)
+            {
+                Debug.LogWarning($"Spawn at {currentSpawn} failed. Reasons: {string.Join("; ", invalidPositions)}");
+            }
+
+            bool foundValidPosition = false;
             for (int dy = -2; dy <= 2; dy++)
             {
                 for (int dx = -2; dx <= 2; dx++)
@@ -481,18 +520,26 @@ public class Board : MonoBehaviour
                     if (IsValidBoardPosition(altSpawn) && IsValidPosition(activePiece, altSpawn))
                     {
                         currentSpawn = altSpawn;
+                        foundValidPosition = true;
                         break;
                     }
                 }
+                if (foundValidPosition) break;
             }
+
+            activePiece.Initialize(this, currentSpawn, data);
         }
 
-        activePiece.Initialize(this, currentSpawn, data); // Re-initialize with adjusted position
+        if (IsBoardTooFull())
+        {
+            Debug.LogWarning("Game Over: Board is too full (outermost radius band is nearly full).");
+            GameOver();
+            return;
+        }
 
         if (IsValidPosition(activePiece, currentSpawn))
         {
             Set(activePiece);
-            // Snap the piece's transform position to the pixel grid
             activePiece.transform.position = SnapToPixelGrid(activePiece.transform.position);
         }
         else
@@ -502,12 +549,47 @@ public class Board : MonoBehaviour
         }
     }
 
+    private bool IsBoardTooFull()
+    {
+        RectInt bounds = Bounds;
+        int maxRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
+        int outermostBand = maxRadius - 1;
+        List<Vector3Int> positionsInOutermostBand = new List<Vector3Int>();
+        int filledPositions = 0;
+
+        for (int y = bounds.yMin; y < bounds.yMax; y++)
+        {
+            for (int x = bounds.xMin; x < bounds.xMax; x++)
+            {
+                Vector3Int position = new Vector3Int(x, y, 0);
+                if (IsValidBoardPosition(position))
+                {
+                    float radius = Mathf.Sqrt((x * x) + (y * y));
+                    int radiusBand = Mathf.FloorToInt(radius);
+                    if (radiusBand == outermostBand)
+                    {
+                        positionsInOutermostBand.Add(position);
+                        TileBase tile = tilemap.GetTile(position);
+                        if (tile != null && tile != boardTile)
+                        {
+                            filledPositions++;
+                        }
+                    }
+                }
+            }
+        }
+
+        float fillPercentage = (float)filledPositions / positionsInOutermostBand.Count;
+        Debug.Log($"Outermost band (radius {outermostBand} to {outermostBand + 1}): {filledPositions}/{positionsInOutermostBand.Count} positions filled ({fillPercentage * 100:F1}% filled)");
+        return fillPercentage >= 0.9f;
+    }
+
     public void GameOver()
     {
         tilemap.ClearAllTiles();
         CreateShapedBoard();
         UpdateTilemapRotation();
-        // Add additional game over logic here
+        Debug.Log("Game Over! Board cleared and reset.");
     }
 
     public void Set(Piece piece)
@@ -526,7 +608,6 @@ public class Board : MonoBehaviour
         {
             Vector3Int tilePosition = piece.cells[i] + piece.position;
             TileBase currentTile = tilemap.GetTile(tilePosition);
-            // Only clear the piece's tile and restore the boardTile if the position is within the grid
             if (currentTile != null && currentTile != boardTile && IsValidBoardPosition(tilePosition))
             {
                 tilemap.SetTile(tilePosition, boardTile);
@@ -545,16 +626,13 @@ public class Board : MonoBehaviour
 
         for (int i = 0; i < piece.cells.Length; i++)
         {
-            // Use the proposed position instead of the piece's current position
             Vector3Int tilePosition = piece.cells[i] + position;
 
-            // Check circular grid boundaries
             if (!IsValidBoardPosition(tilePosition))
             {
                 return false;
             }
 
-            // Check for collisions with other pieces
             if (tilemap.HasTile(tilePosition) && tilemap.GetTile(tilePosition) != boardTile)
             {
                 return false;
@@ -567,13 +645,11 @@ public class Board : MonoBehaviour
     public void ClearLines()
     {
         RectInt bounds = Bounds;
-        // Group positions by radius "bands" (e.g., radius 0-1, 1-2, ..., 13-14)
         Dictionary<int, List<Vector3Int>> positionsByRadiusBand = new Dictionary<int, List<Vector3Int>>();
         Dictionary<int, int> filledCountByRadiusBand = new Dictionary<int, int>();
 
         int maxRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
 
-        // Group positions into bands based on their radius
         for (int y = bounds.yMin; y < bounds.yMax; y++)
         {
             for (int x = bounds.xMin; x < bounds.xMax; x++)
@@ -582,7 +658,6 @@ public class Board : MonoBehaviour
                 if (IsValidBoardPosition(position))
                 {
                     float radius = Mathf.Sqrt((x * x) + (y * y));
-                    // Assign to a radius band (e.g., radius 10.0 to 11.0 goes into band 10)
                     int radiusBand = Mathf.FloorToInt(radius);
                     if (!positionsByRadiusBand.ContainsKey(radiusBand))
                     {
@@ -594,7 +669,6 @@ public class Board : MonoBehaviour
             }
         }
 
-        // Check each radius band for full rings
         foreach (var kvp in positionsByRadiusBand.OrderBy(k => k.Key))
         {
             int radiusBand = kvp.Key;
@@ -617,9 +691,8 @@ public class Board : MonoBehaviour
             Debug.Log($"Checking radius band {radiusBand} to {radiusBand + 1} (squared distance {radiusBand * radiusBand} to {(radiusBand + 1) * (radiusBand + 1)}): {filledPositions}/{totalPositions} positions filled");
             Debug.Log($"Positions in band: {string.Join(", ", positionDetails)}");
 
-            // Consider a band "full" if a high percentage of positions are filled (e.g., 90%)
             float fillPercentage = (float)filledPositions / totalPositions;
-            if (fillPercentage >= 0.9f && filledPositions > 0) // Adjust threshold as needed
+            if (fillPercentage >= 0.9f && filledPositions > 0)
             {
                 Debug.Log($"Clearing full band at radius {radiusBand} to {radiusBand + 1}, {filledPositions}/{totalPositions} positions filled ({fillPercentage * 100:F1}% filled)");
                 foreach (var pos in positions)
@@ -627,12 +700,11 @@ public class Board : MonoBehaviour
                     tilemap.SetTile(pos, boardTile);
                 }
                 filledCountByRadiusBand[radiusBand] = filledPositions;
-                score += totalPositions * 10; // Add score based on number of positions cleared
+                score += totalPositions * 10;
                 Debug.Log($"Score increased to {score}");
             }
         }
 
-        // Shift rings outward
         ShiftRingsOutward(positionsByRadiusBand, filledCountByRadiusBand);
     }
 
@@ -649,7 +721,6 @@ public class Board : MonoBehaviour
                 {
                     if (positionsByRadiusBand.ContainsKey(r))
                     {
-                        // Create a copy of the positions to avoid modifying the collection while iterating
                         var positions = new List<Vector3Int>(positionsByRadiusBand[r]);
                         foreach (var pos in positions)
                         {
@@ -658,6 +729,8 @@ public class Board : MonoBehaviour
                             {
                                 Vector2Int current = new Vector2Int(pos.x, pos.y);
                                 float currentRadius = Mathf.Sqrt((current.x * current.x) + (current.y * current.y));
+                                if (currentRadius < 0.5f) continue;
+
                                 float angle = Mathf.Atan2(current.y, current.x);
                                 float targetRadius = currentRadius + 1;
                                 int newX = Mathf.RoundToInt(targetRadius * Mathf.Cos(angle));
@@ -690,4 +763,7 @@ public class Board : MonoBehaviour
 
         return withinOuterCircle;
     }
+
+    // Public getter for the paused state, so Piece can access it
+    public bool IsPaused => paused;
 }

@@ -15,7 +15,8 @@ public class Piece : MonoBehaviour
     private float stepTime;
     private float moveTime;
     private float lockTime;
-    private bool isOnGround; // Track if the piece is touching the ground
+    private bool isOnGround;
+    private bool locked;
 
     public void Initialize(Board board, Vector3Int position, TetrominoData data)
     {
@@ -23,6 +24,7 @@ public class Piece : MonoBehaviour
         this.position = position;
         this.data = data;
         this.rotationIndex = 0;
+        this.locked = false;
 
         this.stepTime = Time.time + this.stepDelay;
         this.moveTime = Time.time + this.moveDelay;
@@ -44,26 +46,20 @@ public class Piece : MonoBehaviour
 
     public void AdjustPositionForGridRotation(float previousRotation, float newRotation)
     {
-        // Transform the current position from the previous grid rotation to world coordinates
         Vector3Int worldPos = board.TransformToWorldCoordinates(position);
-
-        // Transform back to the new grid rotation
         position = board.TransformToGridCoordinates(worldPos);
-
-        // Update visual position
         UpdateVisualPosition();
     }
 
     private void UpdateVisualPosition()
     {
-        // Convert grid position to world coordinates for rendering
         Vector3Int worldPos = board.TransformToWorldCoordinates(position);
         transform.position = new Vector3(worldPos.x, worldPos.y, worldPos.z);
     }
 
     private void Update()
     {
-        if (this.board == null) return;
+        if (this.board == null || this.locked || this.board.IsPaused) return; // Skip if paused
 
         this.board.Clear(this);
 
@@ -77,42 +73,42 @@ public class Piece : MonoBehaviour
             Step();
         }
 
-        this.board.Set(this);
+        if (!this.locked)
+        {
+            this.board.Set(this);
+        }
     }
 
     private void HandleMoveInputs()
     {
-        // Rotation inputs (Q/E for counterclockwise/clockwise piece rotation)
         if (Input.GetKeyDown(KeyCode.Q))
         {
-            if (Rotate(-1)) // Counterclockwise
+            if (Rotate(-1))
             {
-                // Reset lockTime if rotation is successful
                 this.lockTime = 0f;
-                this.isOnGround = false; // Recheck if on ground after rotation
+                this.isOnGround = false;
             }
         }
         else if (Input.GetKeyDown(KeyCode.E))
         {
-            if (Rotate(1)) // Clockwise
+            if (Rotate(1))
             {
                 this.lockTime = 0f;
                 this.isOnGround = false;
             }
         }
 
-        // Movement inputs (A/D for left/right, S for soft drop, Space for hard drop)
         if (Input.GetKey(KeyCode.A))
         {
-            if (Move(new Vector2Int(-1, 0))) // Move left in world space
+            if (Move(new Vector2Int(-1, 0)))
             {
-                this.lockTime = 0f; // Reset lockTime on successful lateral move
-                this.isOnGround = false; // Recheck if on ground
+                this.lockTime = 0f;
+                this.isOnGround = false;
             }
         }
         else if (Input.GetKey(KeyCode.D))
         {
-            if (Move(new Vector2Int(1, 0))) // Move right in world space
+            if (Move(new Vector2Int(1, 0)))
             {
                 this.lockTime = 0f;
                 this.isOnGround = false;
@@ -121,7 +117,7 @@ public class Piece : MonoBehaviour
 
         if (Input.GetKey(KeyCode.S))
         {
-            Move(new Vector2Int(0, -1)); // Soft drop
+            Move(new Vector2Int(0, -1));
         }
 
         if (Input.GetKeyDown(KeyCode.Space))
@@ -134,15 +130,13 @@ public class Piece : MonoBehaviour
     {
         this.stepTime = Time.time + this.stepDelay;
 
-        // Always fall downward in world space (screen downward)
         bool moved = Move(new Vector2Int(0, -1));
 
         if (!moved)
         {
-            this.isOnGround = true; // Piece has hit the ground or another piece
+            this.isOnGround = true;
             this.lockTime += Time.deltaTime;
 
-            // Lock immediately if lockTime exceeds lockDelay and no lateral movement/rotation is happening
             if (this.lockTime >= this.lockDelay || (!Input.GetKey(KeyCode.A) && !Input.GetKey(KeyCode.D) && !Input.GetKeyDown(KeyCode.Q) && !Input.GetKeyDown(KeyCode.E)))
             {
                 Lock();
@@ -150,8 +144,8 @@ public class Piece : MonoBehaviour
         }
         else
         {
-            this.isOnGround = false; // Piece is still falling
-            this.lockTime = 0f; // Reset lockTime since the piece moved down
+            this.isOnGround = false;
+            this.lockTime = 0f;
         }
     }
 
@@ -179,9 +173,9 @@ public class Piece : MonoBehaviour
             this.moveTime = Time.time + this.moveDelay;
             UpdateVisualPosition();
         }
-        else if (worldTranslation.y < 0) // Moving downward in world space
+        else if (worldTranslation.y < 0)
         {
-            this.isOnGround = true; // Mark as on ground if downward move fails
+            this.isOnGround = true;
         }
 
         return valid;
@@ -191,10 +185,11 @@ public class Piece : MonoBehaviour
     {
         if (!board.IsValidPosition(this, this.position))
         {
-            //Debug.LogError($"Locking at invalid position {this.position}! This should not happen.");
+            Debug.LogError($"Locking at invalid position {this.position}! This should not happen.");
         }
 
         this.board.Set(this);
+        this.locked = true;
         this.board.ClearLines();
         this.board.SpawnPiece();
     }
