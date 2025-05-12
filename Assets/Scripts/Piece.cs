@@ -15,7 +15,7 @@ public class Piece : MonoBehaviour
     private float stepTime;
     private float moveTime;
     private float lockTime;
-    private bool isOnGround; // Track if the piece is touching the ground
+    //private bool isOnGround; // Track if the piece is touching the ground
 
     public void Initialize(Board board, Vector3Int position, TetrominoData data)
     {
@@ -191,7 +191,7 @@ public class Piece : MonoBehaviour
     {
         if (!board.IsValidPosition(this, this.position))
         {
-            Debug.LogError($"Locking at invalid position {this.position}! This should not happen.");
+            //Debug.LogError($"Locking at invalid position {this.position}! This should not happen.");
         }
 
         this.board.Set(this);
