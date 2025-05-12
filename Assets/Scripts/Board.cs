@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
+using System.Collections;
 
 [DefaultExecutionOrder(-1)]
 public class Board : MonoBehaviour
@@ -20,7 +21,11 @@ public class Board : MonoBehaviour
     [SerializeField]
     private GameObject piecePrefab; // Assign a Piece prefab in the Inspector
 
-    private float gridRotation = 0f; // Current rotation of the grid in degrees (0, 90, -90, etc.)
+    private float gridRotation = 0f; // Current rotation of the grid in degrees
+    private float targetRotation = 0f; // Target rotation for lerping
+    private bool isRotating = false; // Flag to prevent multiple rotations at once
+    [SerializeField]
+    private float rotationDuration = 0.5f; // Duration of the rotation animation in seconds
     public float GridRotation => gridRotation; // Public getter for gridRotation
 
     private int score = 0; // For tracking score when clearing rings
@@ -37,9 +42,9 @@ public class Board : MonoBehaviour
             bool foundTile = false;
 
             int outerRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
-            for (int x = -outerRadius - 1; x <= outerRadius + 1; x++)
+            for (int x = -outerRadius; x <= outerRadius; x++)
             {
-                for (int y = -outerRadius - 1; y <= outerRadius + 1; y++)
+                for (int y = -outerRadius; y <= outerRadius; y++)
                 {
                     Vector2Int currentPosition = new Vector2Int(x, y);
                     int distanceSquared = (currentPosition.x * currentPosition.x) + (currentPosition.y * currentPosition.y);
@@ -77,6 +82,10 @@ public class Board : MonoBehaviour
             enabled = false;
             return;
         }
+
+        // Ensure Tilemap's transform is centered
+        tilemap.transform.localPosition = Vector3.zero;
+        Debug.Log($"Tilemap initial local position: {tilemap.transform.localPosition}");
 
         // Check for existing Piece
         activePiece = GetComponentInChildren<Piece>();
@@ -189,37 +198,71 @@ public class Board : MonoBehaviour
     private void Update()
     {
         // Handle grid rotation input
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        if (!isRotating)
         {
-            RotateGrid(-90f); // Counterclockwise
-        }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
-        {
-            RotateGrid(90f); // Clockwise
+            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            {
+                StartCoroutine(RotateGridSmooth(-90f)); // Counterclockwise
+            }
+            else if (Input.GetKeyDown(KeyCode.RightArrow))
+            {
+                StartCoroutine(RotateGridSmooth(90f)); // Clockwise
+            }
         }
     }
 
-    private void RotateGrid(float angleDelta)
+    private IEnumerator RotateGridSmooth(float angleDelta)
     {
-        // Update grid rotation
-        float previousRotation = gridRotation;
-        gridRotation += angleDelta;
+        if (isRotating) yield break; // Prevent overlapping rotations
+        isRotating = true;
 
-        // Update Tilemap rotation
-        UpdateTilemapRotation();
+        // Log the position of a reference tile before rotation
+        Vector3Int referenceTile = new Vector3Int(0, 0, 0);
+        Vector3 worldPosBefore = tilemap.CellToWorld(referenceTile);
+        Debug.Log($"Before rotation: Reference tile {referenceTile} world position: {worldPosBefore}");
+
+        // Update target rotation
+        float previousRotation = gridRotation;
+        targetRotation += angleDelta;
+
+        // Start lerping
+        float elapsedTime = 0f;
+        Quaternion startRotation = Quaternion.Euler(0f, 0f, gridRotation);
+        Quaternion endRotation = Quaternion.Euler(0f, 0f, targetRotation);
+
+        while (elapsedTime < rotationDuration)
+        {
+            elapsedTime += Time.deltaTime;
+            float t = Mathf.Clamp01(elapsedTime / rotationDuration);
+            // Use a smooth step for more natural easing
+            float smoothT = t * t * (3f - 2f * t);
+            tilemap.transform.rotation = Quaternion.Lerp(startRotation, endRotation, smoothT);
+            gridRotation = Mathf.LerpAngle(previousRotation, targetRotation, smoothT);
+            yield return null;
+        }
+
+        // Ensure final rotation is exact
+        tilemap.transform.rotation = endRotation;
+        gridRotation = targetRotation;
+
+        // Log the position of the reference tile after rotation
+        Vector3 worldPosAfter = tilemap.CellToWorld(referenceTile);
+        Debug.Log($"After rotation: Reference tile {referenceTile} world position: {worldPosAfter}, gridRotation: {gridRotation}");
 
         // Adjust active piece position to match the new grid rotation
         if (activePiece != null)
         {
             activePiece.AdjustPositionForGridRotation(previousRotation, gridRotation);
         }
+
+        isRotating = false;
     }
 
     private void UpdateTilemapRotation()
     {
-        // Ensure Tilemap GameObject's position is centered at (0, 0, 0)
+        // This method is now primarily used to ensure the Tilemap's position is centered
         tilemap.transform.position = Vector3.zero;
-        tilemap.transform.rotation = Quaternion.Euler(0f, 0f, gridRotation);
+        // Rotation is handled in RotateGridSmooth coroutine
     }
 
     public Vector3Int TransformToGridCoordinates(Vector3Int worldPosition)
@@ -229,9 +272,16 @@ public class Board : MonoBehaviour
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
 
-        int x = Mathf.RoundToInt(worldPosition.x * cos + worldPosition.y * sin);
-        int y = Mathf.RoundToInt(-worldPosition.x * sin + worldPosition.y * cos);
-        return new Vector3Int(x, y, worldPosition.z);
+        float x = worldPosition.x * cos + worldPosition.y * sin;
+        float y = -worldPosition.x * sin + worldPosition.y * cos;
+
+        // Apply tolerance to handle floating-point errors
+        const float tolerance = 0.001f;
+        int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
+        int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
+
+        Debug.Log($"TransformToGridCoordinates: worldPosition {worldPosition}, angle {gridRotation}, cos: {cos}, sin: {sin}, x: {x}, y: {y}, rounded: ({roundedX}, {roundedY})");
+        return new Vector3Int(roundedX, roundedY, worldPosition.z);
     }
 
     public Vector3Int TransformToWorldCoordinates(Vector3Int gridPosition)
@@ -241,9 +291,16 @@ public class Board : MonoBehaviour
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
 
-        int x = Mathf.RoundToInt(gridPosition.x * cos + gridPosition.y * sin);
-        int y = Mathf.RoundToInt(-gridPosition.x * sin + gridPosition.y * cos);
-        return new Vector3Int(x, y, gridPosition.z);
+        float x = gridPosition.x * cos + gridPosition.y * sin;
+        float y = -gridPosition.x * sin + gridPosition.y * cos;
+
+        // Apply tolerance to handle floating-point errors
+        const float tolerance = 0.001f;
+        int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
+        int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
+
+        Debug.Log($"TransformToWorldCoordinates: gridPosition {gridPosition}, angle {gridRotation}, cos: {cos}, sin: {sin}, x: {x}, y: {y}, rounded: ({roundedX}, {roundedY})");
+        return new Vector3Int(roundedX, roundedY, gridPosition.z);
     }
 
     public Vector2Int TransformDirectionToWorld(Vector2Int gridDirection)
@@ -253,9 +310,15 @@ public class Board : MonoBehaviour
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
 
-        int x = Mathf.RoundToInt(gridDirection.x * cos + gridDirection.y * sin);
-        int y = Mathf.RoundToInt(-gridDirection.x * sin + gridDirection.y * cos);
-        return new Vector2Int(x, y);
+        float x = gridDirection.x * cos + gridDirection.y * sin;
+        float y = -gridDirection.x * sin + gridDirection.y * cos;
+
+        // Apply tolerance to handle floating-point errors
+        const float tolerance = 0.001f;
+        int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
+        int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
+
+        return new Vector2Int(roundedX, roundedY);
     }
 
     public Vector2Int TransformWorldDirectionToGrid(Vector2Int worldDirection)
@@ -265,24 +328,29 @@ public class Board : MonoBehaviour
         float cos = Mathf.Cos(angleRad);
         float sin = Mathf.Sin(angleRad);
 
-        int x = Mathf.RoundToInt(worldDirection.x * cos + worldDirection.y * sin);
-        int y = Mathf.RoundToInt(-worldDirection.x * sin + worldDirection.y * cos);
+        float x = worldDirection.x * cos + worldDirection.y * sin;
+        float y = -worldDirection.x * sin + worldDirection.y * cos;
+
+        // Apply tolerance to handle floating-point errors
+        const float tolerance = 0.001f;
+        int roundedX = Mathf.Abs(x) < tolerance ? 0 : Mathf.RoundToInt(x);
+        int roundedY = Mathf.Abs(y) < tolerance ? 0 : Mathf.RoundToInt(y);
 
         // Adjust directions to match player expectation in world space
         if (worldDirection == new Vector2Int(0, -1)) // Downward movement
         {
-            x = -x; // Flip the x-component to correct the falling direction
+            roundedX = -roundedX; // Flip the x-component to correct the falling direction
         }
         else if (worldDirection == new Vector2Int(-1, 0) || worldDirection == new Vector2Int(1, 0)) // Left or right movement
         {
             float rotationMod = Mathf.Abs(gridRotation % 360);
             if (Mathf.Approximately(rotationMod, 90) || Mathf.Approximately(rotationMod, 270))
             {
-                y = -y; // Flip the y-component to correct left/right movement at 90 and -90 degrees
+                roundedY = -roundedY; // Flip the y-component to correct left/right movement at 90 and -90 degrees
             }
         }
 
-        return new Vector2Int(x, y);
+        return new Vector2Int(roundedX, roundedY);
     }
 
     private void CreateShapedBoard()
@@ -294,6 +362,7 @@ public class Board : MonoBehaviour
         // Center the grid by adjusting the bounds
         int offsetX = (bounds.xMin + bounds.xMax) / 2;
         int offsetY = (bounds.yMin + bounds.yMax) / 2;
+        Debug.Log($"Bounds: minX={bounds.xMin}, maxX={bounds.xMax}, minY={bounds.yMin}, maxY={bounds.yMax}, offsetX={offsetX}, offsetY={offsetY}");
 
         for (int y = bounds.yMin; y < bounds.yMax; y++)
         {
@@ -310,6 +379,17 @@ public class Board : MonoBehaviour
                 }
             }
         }
+
+        // Log the position of a reference tile after creation
+        Vector3Int referenceTile = new Vector3Int(0, 0, 0);
+        Vector3 worldPos = tilemap.CellToWorld(referenceTile);
+        Debug.Log($"After CreateShapedBoard: Reference tile {referenceTile} world position: {worldPos}");
+
+        // Adjust Tilemap position to ensure the center tile is at (0, 0, 0) in world space
+        Vector3 centerWorldPos = tilemap.CellToWorld(new Vector3Int(0, 0, 0));
+        Vector3 offset = Vector3.zero - centerWorldPos;
+        tilemap.transform.localPosition = Vector3.zero;
+        Debug.Log($"Adjusted Tilemap position by {offset} to center tile (0, 0, 0) at world (0, 0, 0). New position: {tilemap.transform.position}");
     }
 
     private Vector3Int FindValidSpawnPosition()
