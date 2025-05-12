@@ -29,6 +29,8 @@ public class Board : MonoBehaviour
     public float GridRotation => gridRotation; // Public getter for gridRotation
 
     private int score = 0; // For tracking score when clearing rings
+    private const float pixelsPerUnit = 192f; // PPU of the tiles
+    private const float pixelSize = 1f / 192f; // Size of one pixel in Unity units (1/192)
 
     public RectInt Bounds
     {
@@ -211,6 +213,14 @@ public class Board : MonoBehaviour
         }
     }
 
+    private Vector3 SnapToPixelGrid(Vector3 position)
+    {
+        // Snap the position to the nearest pixel grid position based on 192 PPU
+        float snappedX = Mathf.Round(position.x / pixelSize) * pixelSize;
+        float snappedY = Mathf.Round(position.y / pixelSize) * pixelSize;
+        return new Vector3(snappedX, snappedY, position.z);
+    }
+
     private IEnumerator RotateGridSmooth(float angleDelta)
     {
         if (isRotating) yield break; // Prevent overlapping rotations
@@ -245,23 +255,26 @@ public class Board : MonoBehaviour
         tilemap.transform.rotation = endRotation;
         gridRotation = targetRotation;
 
+        // Snap Tilemap and Piece positions to the pixel grid after rotation
+        UpdateTilemapRotation();
+        if (activePiece != null)
+        {
+            activePiece.transform.position = SnapToPixelGrid(activePiece.transform.position);
+            activePiece.AdjustPositionForGridRotation(previousRotation, gridRotation);
+            activePiece.transform.position = SnapToPixelGrid(activePiece.transform.position);
+        }
+
         // Log the position of the reference tile after rotation
         Vector3 worldPosAfter = tilemap.CellToWorld(referenceTile);
         Debug.Log($"After rotation: Reference tile {referenceTile} world position: {worldPosAfter}, gridRotation: {gridRotation}");
-
-        // Adjust active piece position to match the new grid rotation
-        if (activePiece != null)
-        {
-            activePiece.AdjustPositionForGridRotation(previousRotation, gridRotation);
-        }
 
         isRotating = false;
     }
 
     private void UpdateTilemapRotation()
     {
-        // This method is now primarily used to ensure the Tilemap's position is centered
-        tilemap.transform.position = Vector3.zero;
+        // Ensure the Tilemap's position is centered and snapped to the pixel grid
+        tilemap.transform.position = SnapToPixelGrid(Vector3.zero);
         // Rotation is handled in RotateGridSmooth coroutine
     }
 
@@ -479,6 +492,8 @@ public class Board : MonoBehaviour
         if (IsValidPosition(activePiece, currentSpawn))
         {
             Set(activePiece);
+            // Snap the piece's transform position to the pixel grid
+            activePiece.transform.position = SnapToPixelGrid(activePiece.transform.position);
         }
         else
         {
@@ -617,48 +632,47 @@ public class Board : MonoBehaviour
             }
         }
 
-        // Shift rings inward
-        ShiftRingsInward(positionsByRadiusBand, filledCountByRadiusBand);
+        // Shift rings outward
+        ShiftRingsOutward(positionsByRadiusBand, filledCountByRadiusBand);
     }
 
-    private void ShiftRingsInward(Dictionary<int, List<Vector3Int>> positionsByRadiusBand, Dictionary<int, int> filledCountByRadiusBand)
+    private void ShiftRingsOutward(Dictionary<int, List<Vector3Int>> positionsByRadiusBand, Dictionary<int, int> filledCountByRadiusBand)
     {
-        var sortedRadiusBands = positionsByRadiusBand.Keys.OrderBy(r => r).ToList();
+        var sortedRadiusBands = positionsByRadiusBand.Keys.OrderByDescending(r => r).ToList();
 
         foreach (var radiusBand in sortedRadiusBands)
         {
             if (filledCountByRadiusBand[radiusBand] > 0)
             {
-                Debug.Log($"Shifting inward due to cleared band at radius {radiusBand} to {radiusBand + 1}");
-                for (int r = radiusBand + 1; r <= sortedRadiusBands.Max(); r++)
+                Debug.Log($"Shifting outward due to cleared band at radius {radiusBand} to {radiusBand + 1}");
+                for (int r = radiusBand - 1; r >= 0; r--)
                 {
                     if (positionsByRadiusBand.ContainsKey(r))
                     {
-                        foreach (var pos in positionsByRadiusBand[r])
+                        // Create a copy of the positions to avoid modifying the collection while iterating
+                        var positions = new List<Vector3Int>(positionsByRadiusBand[r]);
+                        foreach (var pos in positions)
                         {
                             TileBase tile = tilemap.GetTile(pos);
                             if (tile != null && tile != boardTile)
                             {
                                 Vector2Int current = new Vector2Int(pos.x, pos.y);
                                 float currentRadius = Mathf.Sqrt((current.x * current.x) + (current.y * current.y));
-                                if (currentRadius > 0)
-                                {
-                                    float angle = Mathf.Atan2(current.y, current.x);
-                                    float targetRadius = currentRadius - 1;
-                                    int newX = Mathf.RoundToInt(targetRadius * Mathf.Cos(angle));
-                                    int newY = Mathf.RoundToInt(targetRadius * Mathf.Sin(angle));
-                                    Vector3Int newPosition = new Vector3Int(newX, newY, 0);
+                                float angle = Mathf.Atan2(current.y, current.x);
+                                float targetRadius = currentRadius + 1;
+                                int newX = Mathf.RoundToInt(targetRadius * Mathf.Cos(angle));
+                                int newY = Mathf.RoundToInt(targetRadius * Mathf.Sin(angle));
+                                Vector3Int newPosition = new Vector3Int(newX, newY, 0);
 
-                                    if (IsValidBoardPosition(newPosition) && (!tilemap.HasTile(newPosition) || tilemap.GetTile(newPosition) == boardTile))
-                                    {
-                                        Debug.Log($"Moving tile from {pos} (radius {currentRadius:F2}) to {newPosition} (radius {targetRadius:F2})");
-                                        tilemap.SetTile(newPosition, tile);
-                                        tilemap.SetTile(pos, boardTile);
-                                    }
-                                    else
-                                    {
-                                        Debug.Log($"Cannot move tile from {pos} to {newPosition}: {(IsValidBoardPosition(newPosition) ? "Position occupied" : "Outside grid")}");
-                                    }
+                                if (IsValidBoardPosition(newPosition) && (!tilemap.HasTile(newPosition) || tilemap.GetTile(newPosition) == boardTile))
+                                {
+                                    Debug.Log($"Moving tile from {pos} (radius {currentRadius:F2}) to {newPosition} (radius {targetRadius:F2})");
+                                    tilemap.SetTile(newPosition, tile);
+                                    tilemap.SetTile(pos, boardTile);
+                                }
+                                else
+                                {
+                                    Debug.Log($"Cannot move tile from {pos} to {newPosition}: {(IsValidBoardPosition(newPosition) ? "Position occupied" : "Outside grid")}");
                                 }
                             }
                         }
