@@ -4,7 +4,7 @@ using UnityEngine.SceneManagement;
 
 public class Menu : MonoBehaviour
 {
-    [SerializeField] private RectTransform quitButton, creditsButton, scoreButton;
+    [SerializeField] private RectTransform quitButton, creditsButton, scoreButton, playButton;
     [SerializeField] private float buttonEndPos, buttonMovementSpeed,buttonResetPos,popAnimationEffect;
     
     [SerializeField] private RectTransform creditsBox, scoreBox, quitBox;
@@ -50,6 +50,17 @@ public class Menu : MonoBehaviour
 
         MainMenuButtonInit();
         mateChan.mateState = 2;
+    }
+
+    public void PlayGame()
+    {
+        mateChan.mateState = 1;
+        quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad)
+            .OnComplete(() => {
+                SceneManager.LoadScene(1);
+        });
     }
 
     public void OpenCredits()
@@ -129,12 +140,14 @@ public class Menu : MonoBehaviour
         quitButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.05f).SetEase(Ease.OutBack);
         creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.03f).SetEase(Ease.OutBack);
         scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
+        playButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed+0.01f).SetEase(Ease.OutBack);
     }
     private void CloseMainMenu()
     {
         quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        playButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
     }
 
     private void scoreDialogue()
