@@ -1,6 +1,6 @@
 using UnityEngine;
 using DG.Tweening;
-using UnityEngine.SocialPlatforms.Impl;
+using UnityEngine.SceneManagement;
 
 public class Menu : MonoBehaviour
 {
@@ -12,6 +12,12 @@ public class Menu : MonoBehaviour
     [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
     [SerializeField] private ScoreManager scoreManager;
     [SerializeField] private bool isTestingScore = true;
+
+    [Header("Mate says:")]
+    [SerializeField] private MateChanBounce mateChan;
+    [SerializeField] private int mateLowScore;
+    [SerializeField] private int mateMidScore;
+    [SerializeField] private int mateHighScore;
 
     public void QuitGame()
     {
@@ -27,7 +33,7 @@ public class Menu : MonoBehaviour
         //Must remove before final build!!! VERY IMPORTANT!
         if (isTestingScore == true)
         {
-            scoreManager.SetNewHighscore(123);
+            scoreManager.SetNewHighscore(101);
         }
        
         visibleUiBoxVisiblePos = creditsBox.anchoredPosition;
@@ -43,6 +49,7 @@ public class Menu : MonoBehaviour
         quitBox.gameObject.SetActive(false);
 
         MainMenuButtonInit();
+        mateChan.mateState = 2;
     }
 
     public void OpenCredits()
@@ -53,6 +60,7 @@ public class Menu : MonoBehaviour
         creditsBox.gameObject.SetActive(true);
         creditsBox.anchoredPosition = hiddenUiBoxVisiblePos;
         creditsBox.DOAnchorPos(visibleUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.OutBack);
+        mateChan.mateState = 3;
     }
 
     //returns UI boxes to their hidden position and on completion sets their game object to false while pushing the initial main menu buttons back. 
@@ -63,6 +71,7 @@ public class Menu : MonoBehaviour
                 creditsBox.gameObject.SetActive(false);
 
                 MainMenuButtonInit();
+                mateChan.mateState = 11;
             });
     }
     
@@ -76,6 +85,7 @@ public class Menu : MonoBehaviour
         scoreBox.gameObject.SetActive(true);
         scoreBox.anchoredPosition = hiddenUiBoxVisiblePos;
         scoreBox.DOAnchorPos(visibleUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.OutBack);
+        scoreDialogue();
     }
     
     //returns score UI to their hidden position and on completion sets their game object to false while pushing the initial main menu buttons back. 
@@ -86,12 +96,14 @@ public class Menu : MonoBehaviour
                 scoreBox.gameObject.SetActive(false);
 
                 MainMenuButtonInit();
+                mateChan.mateState = 10;
             });
     }
     
     public void OpenQuit()
     {
         CloseMainMenu();
+        mateChan.mateState = 4;
         
         //sets score box as visible and animates it with a pop from the right side of the screen
         quitBox.gameObject.SetActive(true);
@@ -106,6 +118,7 @@ public class Menu : MonoBehaviour
                 quitBox.gameObject.SetActive(false);
 
                 MainMenuButtonInit();
+                mateChan.mateState = 5;
             });
     }
 
@@ -122,5 +135,24 @@ public class Menu : MonoBehaviour
         quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+    }
+
+    private void scoreDialogue()
+    {
+        if (scoreManager.GetHighscore() <= 1)
+        {
+            mateChan.mateState = 6;
+        } else if (scoreManager.GetHighscore() >= mateLowScore)
+        {
+            mateChan.mateState = 7;
+        }
+        else if (scoreManager.GetHighscore() >= mateMidScore)
+        {
+            mateChan.mateState = 7;
+        }
+        else if (scoreManager.GetHighscore() >= mateHighScore)
+        {
+            mateChan.mateState = 8;
+        }
     }
 }
