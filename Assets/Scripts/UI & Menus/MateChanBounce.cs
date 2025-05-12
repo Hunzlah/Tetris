@@ -10,7 +10,6 @@ public class MateChanBounce : MonoBehaviour
     // implement later maybe [SerializeField] private GameObject quoteBox;
     [SerializeField] private float bounceHeight = 1f; 
     [SerializeField] private float bounceDuration = 0.5f; 
-    [SerializeField] private float screenWidth = 10f;
 
     [SerializeField] private TextMeshProUGUI mataChanText;
 
@@ -50,7 +49,7 @@ public class MateChanBounce : MonoBehaviour
                 mataChanText.text = "That's a tiny score, you can do better!";
                 break;
             case 7:
-                mataChanText.text = "You got this I know you can reach even further beyond that score.";
+                mataChanText.text = "You got this I know you can reach even further beyond";
                 break;
             case 8:
                 mataChanText.text = "You're starting to impress me, but I know you can do even better!";
