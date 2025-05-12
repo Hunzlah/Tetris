@@ -179,19 +179,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   boardTile: {fileID: 11400000, guid: b67551fbdaf1a8841bf31d08aba0185b, type: 2}
   tetrominoes:
-  - tile: {fileID: 11400000, guid: 542c59cde188130468ac9b3bb4a3fe95, type: 2}
+  - tile: {fileID: 11400000, guid: 0ffb69917d46bd842a2e846bfbbeba38, type: 2}
     tetromino: 0
-  - tile: {fileID: 11400000, guid: 888e352d2a3377444bbebd5675f0d908, type: 2}
+  - tile: {fileID: 11400000, guid: e9e4c182a07ec0c4f8e6c80c300a8614, type: 2}
     tetromino: 3
-  - tile: {fileID: 11400000, guid: 5e3af4e913296694dbabe8d0d729a525, type: 2}
+  - tile: {fileID: 11400000, guid: 8ede7c4e38da7b0428fa51113a9c2849, type: 2}
     tetromino: 5
-  - tile: {fileID: 11400000, guid: 95d549086d55a3f47adab6d678529597, type: 2}
+  - tile: {fileID: 11400000, guid: 430a8362ebf734c4da4b4e5b3dc823bb, type: 2}
     tetromino: 1
-  - tile: {fileID: 11400000, guid: f4362f41115a5fa49905f079d8f6811d, type: 2}
+  - tile: {fileID: 11400000, guid: 67c1674c14ba8d84d9895442dc265d63, type: 2}
     tetromino: 2
-  - tile: {fileID: 11400000, guid: ff813c55c29d73341896ccb44638d3de, type: 2}
+  - tile: {fileID: 11400000, guid: 3dc73a28993e0294b934c724ade911d6, type: 2}
     tetromino: 4
-  - tile: {fileID: 11400000, guid: e6808ff59fe63024a80b353ed9f1f13c, type: 2}
+  - tile: {fileID: 11400000, guid: e1706459d5966b64597316d0750d4709, type: 2}
     tetromino: 6
   boardSize: {x: 0, y: 0}
   spawnPosition: {x: 0, y: 0, z: 0}
@@ -528,7 +528,7 @@ Transform:
   m_GameObject: {fileID: 2129606031}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1, z: -30}
+  m_LocalPosition: {x: 0, y: 1, z: -25}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

@@ -254,7 +254,7 @@ public class Board : MonoBehaviour
         float sin = Mathf.Sin(angleRad);
 
         int x = Mathf.RoundToInt(gridDirection.x * cos + gridDirection.y * sin);
-        int y = Mathf.RoundToInt(-gridDirection.x * sin + gridDirection.y * cos); // Fixed: Changed gridPosition to gridDirection
+        int y = Mathf.RoundToInt(-gridDirection.x * sin + gridDirection.y * cos);
         return new Vector2Int(x, y);
     }
 
@@ -421,6 +421,7 @@ public class Board : MonoBehaviour
         {
             Vector3Int tilePosition = piece.cells[i] + piece.position;
             tilemap.SetTile(tilePosition, piece.data.tile);
+            Debug.Log($"Setting piece tile at position {tilePosition}");
         }
     }
 
@@ -434,6 +435,7 @@ public class Board : MonoBehaviour
             if (currentTile != null && currentTile != boardTile && IsValidBoardPosition(tilePosition))
             {
                 tilemap.SetTile(tilePosition, boardTile);
+                Debug.Log($"Clearing piece tile at position {tilePosition}, restoring boardTile");
             }
         }
     }
@@ -470,10 +472,13 @@ public class Board : MonoBehaviour
     public void ClearLines()
     {
         RectInt bounds = Bounds;
-        Dictionary<int, List<Vector3Int>> positionsByDistance = new Dictionary<int, List<Vector3Int>>();
-        Dictionary<int, int> filledCountByDistance = new Dictionary<int, int>();
+        // Group positions by radius "bands" (e.g., radius 0-1, 1-2, ..., 13-14)
+        Dictionary<int, List<Vector3Int>> positionsByRadiusBand = new Dictionary<int, List<Vector3Int>>();
+        Dictionary<int, int> filledCountByRadiusBand = new Dictionary<int, int>();
 
-        // Group positions by exact radial distance (squared)
+        int maxRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
+
+        // Group positions into bands based on their radius
         for (int y = bounds.yMin; y < bounds.yMax; y++)
         {
             for (int x = bounds.xMin; x < bounds.xMax; x++)
@@ -481,21 +486,23 @@ public class Board : MonoBehaviour
                 Vector3Int position = new Vector3Int(x, y, 0);
                 if (IsValidBoardPosition(position))
                 {
-                    int distanceSquared = (x * x) + (y * y);
-                    if (!positionsByDistance.ContainsKey(distanceSquared))
+                    float radius = Mathf.Sqrt((x * x) + (y * y));
+                    // Assign to a radius band (e.g., radius 10.0 to 11.0 goes into band 10)
+                    int radiusBand = Mathf.FloorToInt(radius);
+                    if (!positionsByRadiusBand.ContainsKey(radiusBand))
                     {
-                        positionsByDistance[distanceSquared] = new List<Vector3Int>();
-                        filledCountByDistance[distanceSquared] = 0;
+                        positionsByRadiusBand[radiusBand] = new List<Vector3Int>();
+                        filledCountByRadiusBand[radiusBand] = 0;
                     }
-                    positionsByDistance[distanceSquared].Add(position);
+                    positionsByRadiusBand[radiusBand].Add(position);
                 }
             }
         }
 
-        // Check for full rings
-        foreach (var kvp in positionsByDistance)
+        // Check each radius band for full rings
+        foreach (var kvp in positionsByRadiusBand.OrderBy(k => k.Key))
         {
-            int distance = kvp.Key;
+            int radiusBand = kvp.Key;
             var positions = kvp.Value;
             int totalPositions = positions.Count;
             int filledPositions = 0;
@@ -512,40 +519,42 @@ public class Board : MonoBehaviour
                 positionDetails.Add($"Pos {pos}: {(isFilled ? "Filled" : "Empty (boardTile)")}");
             }
 
-            Debug.Log($"Checking ring at squared distance {distance} (radius ~{Mathf.Sqrt(distance):F2}): {filledPositions}/{totalPositions} positions filled");
-            Debug.Log($"Positions in ring: {string.Join(", ", positionDetails)}");
+            Debug.Log($"Checking radius band {radiusBand} to {radiusBand + 1} (squared distance {radiusBand * radiusBand} to {(radiusBand + 1) * (radiusBand + 1)}): {filledPositions}/{totalPositions} positions filled");
+            Debug.Log($"Positions in band: {string.Join(", ", positionDetails)}");
 
-            if (filledPositions == totalPositions && filledPositions > 0)
+            // Consider a band "full" if a high percentage of positions are filled (e.g., 90%)
+            float fillPercentage = (float)filledPositions / totalPositions;
+            if (fillPercentage >= 0.9f && filledPositions > 0) // Adjust threshold as needed
             {
-                Debug.Log($"Clearing full ring at squared distance {distance} (radius ~{Mathf.Sqrt(distance):F2}), {filledPositions}/{totalPositions} positions filled");
+                Debug.Log($"Clearing full band at radius {radiusBand} to {radiusBand + 1}, {filledPositions}/{totalPositions} positions filled ({fillPercentage * 100:F1}% filled)");
                 foreach (var pos in positions)
                 {
                     tilemap.SetTile(pos, boardTile);
                 }
-                filledCountByDistance[distance] = filledPositions;
+                filledCountByRadiusBand[radiusBand] = filledPositions;
                 score += totalPositions * 10; // Add score based on number of positions cleared
                 Debug.Log($"Score increased to {score}");
             }
         }
 
         // Shift rings inward
-        ShiftRingsInward(positionsByDistance, filledCountByDistance);
+        ShiftRingsInward(positionsByRadiusBand, filledCountByRadiusBand);
     }
 
-    private void ShiftRingsInward(Dictionary<int, List<Vector3Int>> positionsByDistance, Dictionary<int, int> filledCountByDistance)
+    private void ShiftRingsInward(Dictionary<int, List<Vector3Int>> positionsByRadiusBand, Dictionary<int, int> filledCountByRadiusBand)
     {
-        var sortedDistances = positionsByDistance.Keys.OrderBy(d => d).ToList();
+        var sortedRadiusBands = positionsByRadiusBand.Keys.OrderBy(r => r).ToList();
 
-        foreach (var distance in sortedDistances)
+        foreach (var radiusBand in sortedRadiusBands)
         {
-            if (filledCountByDistance[distance] > 0)
+            if (filledCountByRadiusBand[radiusBand] > 0)
             {
-                Debug.Log($"Shifting inward due to cleared ring at squared distance {distance} (radius ~{Mathf.Sqrt(distance):F2})");
-                for (int d = distance + 1; d <= sortedDistances.Max(); d++)
+                Debug.Log($"Shifting inward due to cleared band at radius {radiusBand} to {radiusBand + 1}");
+                for (int r = radiusBand + 1; r <= sortedRadiusBands.Max(); r++)
                 {
-                    if (positionsByDistance.ContainsKey(d))
+                    if (positionsByRadiusBand.ContainsKey(r))
                     {
-                        foreach (var pos in positionsByDistance[d])
+                        foreach (var pos in positionsByRadiusBand[r])
                         {
                             TileBase tile = tilemap.GetTile(pos);
                             if (tile != null && tile != boardTile)

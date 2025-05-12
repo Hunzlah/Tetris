@@ -15,7 +15,7 @@ public class Piece : MonoBehaviour
     private float stepTime;
     private float moveTime;
     private float lockTime;
-    //private bool isOnGround; // Track if the piece is touching the ground
+    private bool isOnGround; // Track if the piece is touching the ground
 
     public void Initialize(Board board, Vector3Int position, TetrominoData data)
     {
