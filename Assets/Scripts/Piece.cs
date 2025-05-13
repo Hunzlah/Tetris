@@ -8,7 +8,8 @@ public class Piece : MonoBehaviour
     public TetrominoData data { get; private set; }
     public int rotationIndex { get; private set; }
 
-    public float stepDelay = 1f;
+    public float stepDelay = 1f; // Base falling speed, modified by board rotation
+    private float initialStepDelay = 1f; // Store the initial stepDelay
     public float moveDelay = 0.1f;
     public float lockDelay = 0.5f;
 
@@ -26,6 +27,8 @@ public class Piece : MonoBehaviour
         this.rotationIndex = 0;
         this.locked = false;
 
+        this.initialStepDelay = stepDelay; // Store the initial stepDelay
+        UpdateStepDelayBasedOnBoardRotation(board.GridRotation); // Set initial speed based on board rotation
         this.stepTime = Time.time + this.stepDelay;
         this.moveTime = Time.time + this.moveDelay;
         this.lockTime = 0f;
@@ -48,7 +51,45 @@ public class Piece : MonoBehaviour
     {
         Vector3Int worldPos = board.TransformToWorldCoordinates(position);
         position = board.TransformToGridCoordinates(worldPos);
+        UpdateStepDelayBasedOnBoardRotation(newRotation); // Update speed based on new board rotation
         UpdateVisualPosition();
+    }
+
+    private void UpdateStepDelayBasedOnBoardRotation(float boardRotation)
+    {
+        // Normalize the board rotation to 0-360 degrees
+        float normalizedRotation = boardRotation % 360;
+        if (normalizedRotation < 0)
+        {
+            normalizedRotation += 360;
+        }
+
+        // Define speed multipliers for each angle
+        float speedMultiplier;
+        if (Mathf.Abs(normalizedRotation - 0) < 0.1f) // 0°
+        {
+            speedMultiplier = 1f; // Normal speed
+        }
+        else if (Mathf.Abs(normalizedRotation - 90) < 0.1f) // 90°
+        {
+            speedMultiplier = 1.5f; // 1.5x faster
+        }
+        else if (Mathf.Abs(normalizedRotation - 180) < 0.1f) // 180° or -180°
+        {
+            speedMultiplier = 2f; // 2x faster
+        }
+        else if (Mathf.Abs(normalizedRotation - 270) < 0.1f) // 270° or -90°
+        {
+            speedMultiplier = 0.5f; // 0.5x speed (slower)
+        }
+        else
+        {
+            speedMultiplier = 1f; // Default to normal speed for other angles
+        }
+
+        // Update stepDelay based on the speed multiplier
+        stepDelay = initialStepDelay / speedMultiplier;
+        Debug.Log($"Board rotation: {normalizedRotation}°, Speed multiplier: {speedMultiplier}, New stepDelay: {stepDelay}");
     }
 
     private void UpdateVisualPosition()
@@ -59,7 +100,7 @@ public class Piece : MonoBehaviour
 
     private void Update()
     {
-        if (this.board == null || this.locked || this.board.IsPaused) return; // Skip if paused
+        if (this.board == null || this.locked || this.board.IsPaused) return;
 
         this.board.Clear(this);
 
@@ -155,7 +196,6 @@ public class Piece : MonoBehaviour
         {
             continue;
         }
-
         Lock();
     }
 
