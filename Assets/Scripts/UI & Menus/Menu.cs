@@ -11,7 +11,6 @@ public class Menu : MonoBehaviour
     
     [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
     [SerializeField] private ScoreManager scoreManager;
-    [SerializeField] private bool isTestingScore = true;
 
     [Header("Mate says:")]
     [SerializeField] private MateChanBounce mateChan;
@@ -29,13 +28,7 @@ public class Menu : MonoBehaviour
     
     //Start DOTween animations for each main menu button on startup of game and configured base settings for sub menues in main menu
     void Awake()
-    {
-        //Must remove before final build!!! VERY IMPORTANT!
-        if (isTestingScore == true)
-        {
-            scoreManager.SetNewHighscore(101);
-        }
-       
+    { 
         visibleUiBoxVisiblePos = creditsBox.anchoredPosition;
         
         float screenWidth = Screen.width;
