@@ -194,11 +194,11 @@ MonoBehaviour:
   - tile: {fileID: 11400000, guid: e1706459d5966b64597316d0750d4709, type: 2}
     tetromino: 6
   boardSize: {x: 0, y: 0}
-  spawnPosition: {x: 0, y: 0, z: 0}
   outerRadiusSquared: 128
   piecePrefab: {fileID: 3409194539171282054, guid: 00580a95eeb8ff8439bbb6ced775bc0a, type: 3}
   rotationDuration: 0.5
   pauseMenuUI: {fileID: 0}
+  boardZLevel: -17
 --- !u!1 &377161881
 GameObject:
   m_ObjectHideFlags: 0

@@ -15,23 +15,27 @@ public class ScoreRuntime : MonoBehaviour
         currentScore = 0;
         currentHighscore = scoreManager.GetHighscore(); 
         highScoreText.text = currentHighscore.ToString();
-        
     }
     
-    void FixedUpdate()
+    void Update()
     {
         currentScoreText.text = currentScore.ToString();
+        highScoreText.text = currentHighscore.ToString();
         
-        if (currentScore > currentHighscore)
+        if (currentScore >= currentHighscore)
         {
+            currentHighscore = currentScore;
             scoreManager.SetNewHighscore(currentScore);
         }
-        
-        highScoreText.text = currentHighscore.ToString();
 
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(KeyCode.I))
         {
             currentScore += 100;
         }
+    }
+    
+    public void UpdateScore(int score)
+    {
+        score += currentScore;
     }
 }
