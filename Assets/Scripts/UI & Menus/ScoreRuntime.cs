@@ -28,6 +28,7 @@ public class ScoreRuntime : MonoBehaviour
             scoreManager.SetNewHighscore(currentScore);
         }
 
+        //should remove later
         if (Input.GetKeyDown(KeyCode.I))
         {
             currentScore += 100;
