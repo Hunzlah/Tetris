@@ -530,7 +530,6 @@ public class Board : MonoBehaviour
             tilemap.SetTile(tilePosition, piece.data.tile);
             Debug.Log($"Setting piece tile at position {tilePosition}");
         }
-        scoreRuntime.UpdateScore(100);
     }
 
     public void Clear(Piece piece)
@@ -578,6 +577,7 @@ public class Board : MonoBehaviour
         RectInt bounds = Bounds;
         Dictionary<int, List<Vector3Int>> positionsByRadiusBand = new Dictionary<int, List<Vector3Int>>();
         Dictionary<int, int> filledCountByRadiusBand = new Dictionary<int, int>();
+        scoreRuntime.UpdateScore(100);
 
         int maxRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
 
@@ -635,7 +635,6 @@ public class Board : MonoBehaviour
                 Debug.Log($"Score increased to {score}");
             }
         }
-        scoreRuntime.UpdateScore(1000);
         ShiftRingsOutward(positionsByRadiusBand, filledCountByRadiusBand);
     }
 
