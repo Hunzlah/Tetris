@@ -1989,7 +1989,6 @@ MonoBehaviour:
   hiddenUiBoxVisiblePos: {x: 0, y: 0}
   visibleUiBoxVisiblePos: {x: 0, y: 0}
   scoreManager: {fileID: 1088419626}
-  isTestingScore: 1
   mateChan: {fileID: 1308564318}
   mateLowScore: 100
   mateMidScore: 250
@@ -3041,7 +3040,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mateState: 2
   bounceHeight: 50
-  bounceDuration: 0.7
+  bounceDuration: 1.5
   mataChanText: {fileID: 1089717485}
 --- !u!1 &1381757316
 GameObject:
