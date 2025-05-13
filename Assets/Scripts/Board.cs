@@ -10,34 +10,35 @@ public class Board : MonoBehaviour
     public Tilemap tilemap { get; private set; }
     public Piece activePiece { get; private set; }
 
-    public TileBase boardTile; // Assign your tile in the Inspector
+    public TileBase boardTile;
     public TetrominoData[] tetrominoes;
     public Vector2Int boardSize = new Vector2Int(20, 20);
-    public Vector3Int spawnPosition = new Vector3Int(0, 0, 0); // Center spawn
 
     [SerializeField]
-    public int outerRadiusSquared = 196; // Radius ~14
+    public int outerRadiusSquared = 196;
 
     [SerializeField]
-    private GameObject piecePrefab; // Assign a Piece prefab in the Inspector
+    private GameObject piecePrefab;
 
-    private float gridRotation = 0f; // Current rotation of the grid in degrees
-    private float targetRotation = 0f; // Target rotation for lerping
-    private bool isRotating = false; // Flag to prevent multiple rotations at once
+    private float gridRotation = 0f;
+    private float targetRotation = 0f;
+    private bool isRotating = false;
     [SerializeField]
-    private float rotationDuration = 0.5f; // Duration of the rotation animation in seconds
-    public float GridRotation => gridRotation; // Public getter for gridRotation
+    private float rotationDuration = 0.5f;
+    public float GridRotation => gridRotation;
 
-    private int score = 0; // For tracking score when clearing rings
-    private const float pixelsPerUnit = 192f; // PPU of the tiles
-    private const float pixelSize = 1f / 192f; // Size of one pixel in Unity units (1/192)
+    private int score = 0;
+    private const float pixelsPerUnit = 192f;
+    private const float pixelSize = 1f / 192f;
 
-    // Pause state
-    private bool paused = false; // Tracks whether the game is paused
-
-    // Optional: Reference to a pause menu UI (e.g., a Canvas with a "Paused" text)
+    private bool paused = false;
     [SerializeField]
-    private GameObject pauseMenuUI; // Assign in the Inspector
+    private GameObject pauseMenuUI;
+
+    // Hardcoded Z value for the board and pieces
+
+    [SerializeField]
+    public int boardZLevel = -30; // Adjust this value as needed
 
     public RectInt Bounds
     {
@@ -83,7 +84,6 @@ public class Board : MonoBehaviour
 
     private void Awake()
     {
-        // Find the Tilemap
         tilemap = GetComponentInChildren<Tilemap>();
         if (tilemap == null)
         {
@@ -92,14 +92,13 @@ public class Board : MonoBehaviour
             return;
         }
 
-        // Ensure Tilemap's transform is centered
-        tilemap.transform.localPosition = Vector3.zero;
-        Debug.Log($"Tilemap initial local position: {tilemap.transform.localPosition}");
+        // Set the Tilemap's transform Z position to boardZLevel
+        Vector3 tilemapPos = tilemap.transform.localPosition;
+        tilemap.transform.localPosition = new Vector3(tilemapPos.x, tilemapPos.y, boardZLevel);
+        Debug.Log($"Tilemap initial local position set to: {tilemap.transform.localPosition}");
 
-        // Check for existing Piece
         activePiece = GetComponentInChildren<Piece>();
 
-        // Validate boardTile
         if (boardTile == null)
         {
             Debug.LogError("Board Tile not assigned in the Inspector!");
@@ -107,7 +106,6 @@ public class Board : MonoBehaviour
             return;
         }
 
-        // Validate tetrominoes
         if (tetrominoes == null || tetrominoes.Length == 0)
         {
             Debug.LogError("Tetrominoes array is empty or not assigned!");
@@ -115,7 +113,6 @@ public class Board : MonoBehaviour
             return;
         }
 
-        // Validate piecePrefab
         if (piecePrefab == null)
         {
             Debug.LogError("Piece Prefab not assigned in the Inspector!");
@@ -123,7 +120,6 @@ public class Board : MonoBehaviour
             return;
         }
 
-        // If no Piece exists, instantiate one
         if (activePiece == null)
         {
             try
@@ -136,15 +132,13 @@ public class Board : MonoBehaviour
                     return;
                 }
 
-                // Parent the Piece to the Board
                 pieceObj.transform.SetParent(transform, false);
 
-                // Get the Piece component
                 activePiece = pieceObj.GetComponent<Piece>();
                 if (activePiece == null)
                 {
                     Debug.LogError("Instantiated Piece prefab does not have a Piece component!");
-                    Destroy(pieceObj); // Clean up the instantiated object
+                    Destroy(pieceObj);
                     enabled = false;
                     return;
                 }
@@ -157,7 +151,6 @@ public class Board : MonoBehaviour
             }
         }
 
-        // Verify the hierarchy
         if (activePiece == null)
         {
             Debug.LogError("activePiece is still null after instantiation! Cannot proceed.");
@@ -171,7 +164,6 @@ public class Board : MonoBehaviour
             activePiece.transform.SetParent(transform, false);
         }
 
-        // Initialize tetrominoes
         for (int i = 0; i < tetrominoes.Length; i++)
         {
             tetrominoes[i].Initialize();
@@ -180,25 +172,6 @@ public class Board : MonoBehaviour
         CreateShapedBoard();
         UpdateTilemapRotation();
 
-        // Validate spawn position
-        bool spawnValid = false;
-        if (IsValidBoardPosition(spawnPosition))
-        {
-            TetrominoData testData = tetrominoes[0];
-            activePiece.Initialize(this, spawnPosition, testData);
-            spawnValid = IsValidPosition(activePiece, spawnPosition);
-        }
-
-        if (!spawnValid)
-        {
-            spawnPosition = FindValidSpawnPosition();
-            if (spawnPosition == Vector3Int.zero && !IsValidBoardPosition(spawnPosition))
-            {
-                Debug.LogError("No valid spawn position found! Check board parameters and tetromino cells.");
-            }
-        }
-
-        // Ensure pause menu UI is initially disabled
         if (pauseMenuUI != null)
         {
             pauseMenuUI.SetActive(false);
@@ -212,25 +185,22 @@ public class Board : MonoBehaviour
 
     private void Update()
     {
-        // Handle pause input
         if (Input.GetKeyDown(KeyCode.P))
         {
             TogglePause();
         }
 
-        // Skip updates if the game is paused
         if (paused) return;
 
-        // Handle grid rotation input
         if (!isRotating)
         {
             if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
-                StartCoroutine(RotateGridSmooth(-90f)); // Counterclockwise
+                StartCoroutine(RotateGridSmooth(-90f));
             }
             else if (Input.GetKeyDown(KeyCode.RightArrow))
             {
-                StartCoroutine(RotateGridSmooth(90f)); // Clockwise
+                StartCoroutine(RotateGridSmooth(90f));
             }
         }
     }
@@ -241,7 +211,6 @@ public class Board : MonoBehaviour
         if (paused)
         {
             Debug.Log("Game Paused");
-            // Show pause menu UI if assigned
             if (pauseMenuUI != null)
             {
                 pauseMenuUI.SetActive(true);
@@ -250,7 +219,6 @@ public class Board : MonoBehaviour
         else
         {
             Debug.Log("Game Resumed");
-            // Hide pause menu UI
             if (pauseMenuUI != null)
             {
                 pauseMenuUI.SetActive(false);
@@ -262,7 +230,7 @@ public class Board : MonoBehaviour
     {
         float snappedX = Mathf.Round(position.x / pixelSize) * pixelSize;
         float snappedY = Mathf.Round(position.y / pixelSize) * pixelSize;
-        return new Vector3(snappedX, snappedY, position.z);
+        return new Vector3(snappedX, snappedY, position.z); // Preserve the Z value
     }
 
     private IEnumerator RotateGridSmooth(float angleDelta)
@@ -270,7 +238,7 @@ public class Board : MonoBehaviour
         if (isRotating) yield break;
         isRotating = true;
 
-        Vector3Int referenceTile = new Vector3Int(0, 0, 0);
+        Vector3Int referenceTile = new Vector3Int(0, 0, boardZLevel);
         Vector3 worldPosBefore = tilemap.CellToWorld(referenceTile);
         Debug.Log($"Before rotation: Reference tile {referenceTile} world position: {worldPosBefore}");
 
@@ -311,7 +279,10 @@ public class Board : MonoBehaviour
 
     private void UpdateTilemapRotation()
     {
-        tilemap.transform.position = SnapToPixelGrid(Vector3.zero);
+        // Ensure the Tilemap's Z position matches boardZLevel
+        Vector3 pos = SnapToPixelGrid(Vector3.zero);
+        tilemap.transform.position = new Vector3(pos.x, pos.y, boardZLevel);
+        Debug.Log($"Tilemap position after rotation: {tilemap.transform.position}");
     }
 
     public Vector3Int TransformToGridCoordinates(Vector3Int worldPosition)
@@ -413,74 +384,20 @@ public class Board : MonoBehaviour
 
                 if (withinOuterCircle)
                 {
-                    tilemap.SetTile((Vector3Int)adjustedPosition, boardTile);
+                    tilemap.SetTile(new Vector3Int(adjustedPosition.x, adjustedPosition.y, boardZLevel), boardTile);
                 }
             }
         }
 
-        Vector3Int referenceTile = new Vector3Int(0, 0, 0);
+        Vector3Int referenceTile = new Vector3Int(0, 0, boardZLevel);
         Vector3 worldPos = tilemap.CellToWorld(referenceTile);
         Debug.Log($"After CreateShapedBoard: Reference tile {referenceTile} world position: {worldPos}");
 
-        Vector3 centerWorldPos = tilemap.CellToWorld(new Vector3Int(0, 0, 0));
-        Vector3 offset = Vector3.zero - centerWorldPos;
-        tilemap.transform.localPosition = Vector3.zero;
-        Debug.Log($"Adjusted Tilemap position by {offset} to center tile (0, 0, 0) at world (0, 0, 0). New position: {tilemap.transform.position}");
-    }
-
-    private Vector3Int FindValidSpawnPosition()
-    {
-        int outerRadius = Mathf.CeilToInt(Mathf.Sqrt(outerRadiusSquared));
-
-        Vector3Int centerPos = new Vector3Int(0, 0, 0);
-        bool validForAll = true;
-        foreach (var tetromino in tetrominoes)
-        {
-            activePiece.Initialize(this, centerPos, tetromino);
-            if (!IsValidPosition(activePiece, centerPos))
-            {
-                validForAll = false;
-                break;
-            }
-        }
-        if (validForAll)
-        {
-            return centerPos;
-        }
-
-        for (int r = 0; r <= outerRadius; r++)
-        {
-            for (int x = -r; x <= r; x++)
-            {
-                for (int y = -r; y <= r; y++)
-                {
-                    if (Mathf.Abs(x) != r && Mathf.Abs(y) != r) continue;
-
-                    int distanceSquared = x * x + y * y;
-                    if (distanceSquared <= outerRadiusSquared)
-                    {
-                        Vector3Int pos = new Vector3Int(x, y, 0);
-                        validForAll = true;
-                        foreach (var tetromino in tetrominoes)
-                        {
-                            activePiece.Initialize(this, pos, tetromino);
-                            if (!IsValidPosition(activePiece, pos))
-                            {
-                                validForAll = false;
-                                break;
-                            }
-                        }
-                        if (validForAll)
-                        {
-                            return pos;
-                        }
-                    }
-                }
-            }
-        }
-
-        Debug.LogError("Failed to find a valid spawn position. Check grid parameters and tetromino cells.");
-        return Vector3Int.zero;
+        // Center the Tilemap and ensure its Z position matches boardZLevel
+        Vector3 centerWorldPos = tilemap.CellToWorld(new Vector3Int(0, 0, boardZLevel));
+        Vector3 offset = new Vector3(0, 0, boardZLevel) - centerWorldPos;
+        tilemap.transform.position = offset;
+        Debug.Log($"Adjusted Tilemap position to: {tilemap.transform.position}");
     }
 
     public void SpawnPiece()
@@ -488,9 +405,11 @@ public class Board : MonoBehaviour
         int random = Random.Range(0, tetrominoes.Length);
         TetrominoData data = tetrominoes[random];
 
-        activePiece.Initialize(this, spawnPosition, data);
+        // Hardcode the spawn position directly
+        Vector3Int spawnPos = new Vector3Int(0, 0, boardZLevel);
+        activePiece.Initialize(this, spawnPos, data);
 
-        Vector3Int currentSpawn = spawnPosition;
+        Vector3Int currentSpawn = spawnPos;
         if (!IsValidPosition(activePiece, currentSpawn))
         {
             List<string> invalidPositions = new List<string>();
@@ -516,7 +435,8 @@ public class Board : MonoBehaviour
             {
                 for (int dx = -2; dx <= 2; dx++)
                 {
-                    Vector3Int altSpawn = spawnPosition + new Vector3Int(dx, dy, 0);
+                    Vector3Int altSpawn = spawnPos + new Vector3Int(dx, dy, 0);
+                    altSpawn.z = boardZLevel;
                     if (IsValidBoardPosition(altSpawn) && IsValidPosition(activePiece, altSpawn))
                     {
                         currentSpawn = altSpawn;
@@ -561,7 +481,7 @@ public class Board : MonoBehaviour
         {
             for (int x = bounds.xMin; x < bounds.xMax; x++)
             {
-                Vector3Int position = new Vector3Int(x, y, 0);
+                Vector3Int position = new Vector3Int(x, y, boardZLevel);
                 if (IsValidBoardPosition(position))
                 {
                     float radius = Mathf.Sqrt((x * x) + (y * y));
@@ -654,7 +574,7 @@ public class Board : MonoBehaviour
         {
             for (int x = bounds.xMin; x < bounds.xMax; x++)
             {
-                Vector3Int position = new Vector3Int(x, y, 0);
+                Vector3Int position = new Vector3Int(x, y, boardZLevel);
                 if (IsValidBoardPosition(position))
                 {
                     float radius = Mathf.Sqrt((x * x) + (y * y));
@@ -735,7 +655,7 @@ public class Board : MonoBehaviour
                                 float targetRadius = currentRadius + 1;
                                 int newX = Mathf.RoundToInt(targetRadius * Mathf.Cos(angle));
                                 int newY = Mathf.RoundToInt(targetRadius * Mathf.Sin(angle));
-                                Vector3Int newPosition = new Vector3Int(newX, newY, 0);
+                                Vector3Int newPosition = new Vector3Int(newX, newY, pos.z);
 
                                 if (IsValidBoardPosition(newPosition) && (!tilemap.HasTile(newPosition) || tilemap.GetTile(newPosition) == boardTile))
                                 {
@@ -764,6 +684,5 @@ public class Board : MonoBehaviour
         return withinOuterCircle;
     }
 
-    // Public getter for the paused state, so Piece can access it
     public bool IsPaused => paused;
 }
