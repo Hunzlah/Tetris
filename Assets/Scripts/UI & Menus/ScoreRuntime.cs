@@ -4,19 +4,25 @@ using UnityEngine;
 public class ScoreRuntime : MonoBehaviour
 {
     private int currentScore; 
+    private int currentHighscore;
+    
     [SerializeField] private TMP_Text currentScoreText, highScoreText;
     
     [SerializeField] private ScoreManager scoreManager;
     
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
     {
         currentScore = 0;
+        currentHighscore = scoreManager.GetHighscore(); 
+        highScoreText.text = currentHighscore.ToString();
+        currentScoreText.text = currentScore.ToString();
     }
-
-    // Update is called once per frame
-    void Update()
+    
+    void FixedUpdate()
     {
-        
+        if (currentScore > currentHighscore)
+        {
+            scoreManager.SetNewHighscore(currentScore);
+        }
     }
 }
