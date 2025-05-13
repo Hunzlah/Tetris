@@ -4,10 +4,10 @@ using UnityEngine.SceneManagement;
 
 public class Menu : MonoBehaviour
 {
-    [SerializeField] private RectTransform quitButton, creditsButton, scoreButton, playButton;
+    [SerializeField] private RectTransform quitButton, creditsButton, scoreButton, playButton, howToButton;
     [SerializeField] private float buttonEndPos, buttonMovementSpeed,buttonResetPos,popAnimationEffect;
     
-    [SerializeField] private RectTransform creditsBox, scoreBox, quitBox;
+    [SerializeField] private RectTransform creditsBox, scoreBox, quitBox, playBox;
     
     [SerializeField] private Vector2 hiddenUiBoxVisiblePos, visibleUiBoxVisiblePos;
     [SerializeField] private ScoreManager scoreManager;
@@ -24,6 +24,27 @@ public class Menu : MonoBehaviour
         UnityEditor.EditorApplication.isPlaying = false;
     #endif
         Application.Quit();
+    }
+
+    public void OpenHowToPlay()
+    {
+        CloseMainMenu();
+        mateChan.mateState = 12;
+        
+        playBox.gameObject.SetActive(true);
+        playBox.anchoredPosition = hiddenUiBoxVisiblePos;
+        playBox.DOAnchorPos(visibleUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.OutBack);
+    }
+    
+    public void CloseHowToPlay()
+    {
+        playBox.DOAnchorPos(hiddenUiBoxVisiblePos, popAnimationEffect).SetEase(Ease.InBack)
+            .OnComplete(() => {
+                playBox.gameObject.SetActive(false);
+
+                MainMenuButtonInit();
+                mateChan.mateState = 13;
+            });
     }
     
     //Start DOTween animations for each main menu button on startup of game and configured base settings for sub menues in main menu
@@ -50,6 +71,7 @@ public class Menu : MonoBehaviour
         mateChan.mateState = 1;
         quitButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        howToButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad)
             .OnComplete(() => {
                 SceneManager.LoadScene(1);
@@ -134,6 +156,7 @@ public class Menu : MonoBehaviour
         creditsButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.03f).SetEase(Ease.OutBack);
         scoreButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed).SetEase(Ease.OutBack);
         playButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed+0.01f).SetEase(Ease.OutBack);
+        howToButton.DOAnchorPosX(buttonEndPos, buttonMovementSpeed-0.02f).SetEase(Ease.OutBack);
     }
     private void CloseMainMenu()
     {
@@ -141,6 +164,7 @@ public class Menu : MonoBehaviour
         creditsButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         scoreButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
         playButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
+        howToButton.DOAnchorPosX(buttonResetPos, buttonMovementSpeed).SetEase(Ease.InOutQuad);
     }
 
     private void scoreDialogue()

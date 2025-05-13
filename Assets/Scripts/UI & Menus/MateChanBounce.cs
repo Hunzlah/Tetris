@@ -63,6 +63,12 @@ public class MateChanBounce : MonoBehaviour
             case 11:
                 mataChanText.text = "Time for some fun!";
                 break;
+            case 12:
+                mataChanText.text = "You can call me Maru-Sensei";
+                break;
+            case 13:
+                mataChanText.text = "You ready to play now?";
+                break;
             
             default:
                 mataChanText.text = "Error";
