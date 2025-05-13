@@ -520,6 +520,7 @@ public class Board : MonoBehaviour
         CreateShapedBoard();
         UpdateTilemapRotation();
         Debug.Log("Game Over! Board cleared and reset.");
+        SceneManager.LoadScene(0);
     }
 
     public void Set(Piece piece)
@@ -633,6 +634,7 @@ public class Board : MonoBehaviour
                 filledCountByRadiusBand[radiusBand] = filledPositions;
                 score += totalPositions * 10;
                 Debug.Log($"Score increased to {score}");
+                scoreRuntime.UpdateScore(1000);
             }
         }
         ShiftRingsOutward(positionsByRadiusBand, filledCountByRadiusBand);
@@ -641,7 +643,7 @@ public class Board : MonoBehaviour
     private void ShiftRingsOutward(Dictionary<int, List<Vector3Int>> positionsByRadiusBand, Dictionary<int, int> filledCountByRadiusBand)
     {
         var sortedRadiusBands = positionsByRadiusBand.Keys.OrderByDescending(r => r).ToList();
-
+        
         foreach (var radiusBand in sortedRadiusBands)
         {
             if (filledCountByRadiusBand[radiusBand] > 0)
