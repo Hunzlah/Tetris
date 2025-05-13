@@ -37,6 +37,6 @@ public class ScoreRuntime : MonoBehaviour
     
     public void UpdateScore(int score)
     {
-        score += currentScore;
+        currentScore += score;
     }
 }

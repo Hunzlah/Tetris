@@ -3,6 +3,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.Tilemaps;
 using System.Collections;
+using UnityEngine.SceneManagement;
 
 [DefaultExecutionOrder(-1)]
 public class Board : MonoBehaviour
@@ -38,7 +39,9 @@ public class Board : MonoBehaviour
     // Hardcoded Z value for the board and pieces
 
     [SerializeField]
-    public int boardZLevel = -30; // Adjust this value as needed
+    public int boardZLevel = -17; // Adjust this value as needed
+
+    [SerializeField] private ScoreRuntime scoreRuntime;
 
     public RectInt Bounds
     {
@@ -185,6 +188,13 @@ public class Board : MonoBehaviour
 
     private void Update()
     {
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Debug.Log("Esc key pressed. Loading Scene 0 (Main Menu).");
+            SceneManager.LoadScene(0);
+            return; // Exit Update to prevent further processing after scene change
+        }
+
         if (Input.GetKeyDown(KeyCode.P))
         {
             TogglePause();
@@ -520,6 +530,7 @@ public class Board : MonoBehaviour
             tilemap.SetTile(tilePosition, piece.data.tile);
             Debug.Log($"Setting piece tile at position {tilePosition}");
         }
+        scoreRuntime.UpdateScore(100);
     }
 
     public void Clear(Piece piece)
@@ -624,7 +635,7 @@ public class Board : MonoBehaviour
                 Debug.Log($"Score increased to {score}");
             }
         }
-
+        scoreRuntime.UpdateScore(1000);
         ShiftRingsOutward(positionsByRadiusBand, filledCountByRadiusBand);
     }
 
