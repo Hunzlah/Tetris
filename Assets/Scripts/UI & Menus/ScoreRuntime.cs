@@ -26,6 +26,8 @@ public class ScoreRuntime : MonoBehaviour
         {
             scoreManager.SetNewHighscore(currentScore);
         }
+        
+        highScoreText.text = currentHighscore.ToString();
 
         if (Input.GetKeyDown(KeyCode.Space))
         {
